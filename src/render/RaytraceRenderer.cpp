@@ -1,18 +1,18 @@
 #include "render/RaytraceRenderer.hpp"
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-field-initializers"
+#endif
 
 #include "raymath.h"
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #include <array>
 #include <cmath>
 #include <cstddef>
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-#include <inplace_vector>
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 #include <string>
 #include <string_view>
 
@@ -76,9 +76,6 @@ using scene::Spotlight;
 
 namespace {
 
-template <typename Upload>
-using UniformUploadList = std::inplace_vector<Upload, 8>;
-
 Matrix CreateCameraToWorld(const scene::CameraData &camera) {
   const Vector3 forward = Vector3Normalize(camera.forward);
   const Vector3 right =
@@ -130,9 +127,10 @@ void RaytraceRenderer::updateFrame(int width, int height,
       static_cast<float>(height),
   };
 
-  UniformUploadList<UniformUpload> frameUniforms;
-  frameUniforms.push_back({m_locs.resolution, resolution, SHADER_UNIFORM_VEC2});
-  frameUniforms.push_back({m_locs.time, &time, SHADER_UNIFORM_FLOAT});
+  const auto frameUniforms = std::to_array<UniformUpload>({
+      {m_locs.resolution, resolution, SHADER_UNIFORM_VEC2},
+      {m_locs.time, &time, SHADER_UNIFORM_FLOAT},
+  });
 
   UploadUniforms(m_shader, frameUniforms);
   uploadCamera(width, height, camera);
@@ -145,9 +143,9 @@ void RaytraceRenderer::uploadCamera(int width, int height,
 
   SetShaderValueMatrix(m_shader, m_locs.cameraToWorld, cameraToWorld);
 
-  UniformUploadList<UniformUpload> cameraUniforms;
-  cameraUniforms.push_back(
-      {m_locs.cameraViewportScale, &viewportScale, SHADER_UNIFORM_VEC2});
+  const auto cameraUniforms = std::to_array<UniformUpload>({
+      {m_locs.cameraViewportScale, &viewportScale, SHADER_UNIFORM_VEC2},
+  });
 
   UploadUniforms(m_shader, cameraUniforms);
 }
@@ -163,17 +161,13 @@ void RaytraceRenderer::uploadScene(const scene::Scene &scene) {
   const int dirLightCountGpu = static_cast<int>(dirLightCount);
   const int spotlightCountGpu = static_cast<int>(spotlightCount);
 
-  UniformUploadList<UniformUpload> sceneUniforms;
-  sceneUniforms.push_back(
-      {m_locs.ambientIntensity, &scene.ambient.intensity, SHADER_UNIFORM_VEC3});
-  sceneUniforms.push_back(
-      {m_locs.sphereCount, &sphereCountGpu, SHADER_UNIFORM_INT});
-  sceneUniforms.push_back(
-      {m_locs.planeCount, &planeCountGpu, SHADER_UNIFORM_INT});
-  sceneUniforms.push_back(
-      {m_locs.dirLightCount, &dirLightCountGpu, SHADER_UNIFORM_INT});
-  sceneUniforms.push_back(
-      {m_locs.spotlightCount, &spotlightCountGpu, SHADER_UNIFORM_INT});
+  const auto sceneUniforms = std::to_array<UniformUpload>({
+      {m_locs.ambientIntensity, &scene.ambient.intensity, SHADER_UNIFORM_VEC3},
+      {m_locs.sphereCount, &sphereCountGpu, SHADER_UNIFORM_INT},
+      {m_locs.planeCount, &planeCountGpu, SHADER_UNIFORM_INT},
+      {m_locs.dirLightCount, &dirLightCountGpu, SHADER_UNIFORM_INT},
+      {m_locs.spotlightCount, &spotlightCountGpu, SHADER_UNIFORM_INT},
+  });
 
   UploadUniforms(m_shader, sceneUniforms);
 
@@ -182,11 +176,12 @@ void RaytraceRenderer::uploadScene(const scene::Scene &scene) {
   const auto sphereColor = PackArray<Vector4, MAX_SPHERES>(
       scene.spheres, sphereCount, PackSphereColor);
 
-  UniformUploadList<UniformArrayUpload> sphereUploads;
-  sphereUploads.push_back({m_locs.sphereData, sphereData.data(),
-                           SHADER_UNIFORM_VEC4, sphereCountGpu});
-  sphereUploads.push_back({m_locs.sphereColor, sphereColor.data(),
-                           SHADER_UNIFORM_VEC4, sphereCountGpu});
+  const auto sphereUploads = std::to_array<UniformArrayUpload>({
+      {m_locs.sphereData, sphereData.data(), SHADER_UNIFORM_VEC4,
+       sphereCountGpu},
+      {m_locs.sphereColor, sphereColor.data(), SHADER_UNIFORM_VEC4,
+       sphereCountGpu},
+  });
 
   UploadUniformArrays(m_shader, sphereUploads);
 
@@ -195,11 +190,11 @@ void RaytraceRenderer::uploadScene(const scene::Scene &scene) {
   const auto planeColor =
       PackArray<Vector4, MAX_PLANES>(scene.planes, planeCount, PackPlaneColor);
 
-  UniformUploadList<UniformArrayUpload> planeUploads;
-  planeUploads.push_back(
-      {m_locs.planeData, planeData.data(), SHADER_UNIFORM_VEC4, planeCountGpu});
-  planeUploads.push_back({m_locs.planeColor, planeColor.data(),
-                          SHADER_UNIFORM_VEC4, planeCountGpu});
+  const auto planeUploads = std::to_array<UniformArrayUpload>({
+      {m_locs.planeData, planeData.data(), SHADER_UNIFORM_VEC4, planeCountGpu},
+      {m_locs.planeColor, planeColor.data(), SHADER_UNIFORM_VEC4,
+       planeCountGpu},
+  });
 
   UploadUniformArrays(m_shader, planeUploads);
 
@@ -208,11 +203,12 @@ void RaytraceRenderer::uploadScene(const scene::Scene &scene) {
   const auto dirLightIntensity = PackArray<Vector3, MAX_LIGHTS>(
       scene.dirlights, dirLightCount, &DirectionalLight::intensity);
 
-  UniformUploadList<UniformArrayUpload> dirLightUploads;
-  dirLightUploads.push_back({m_locs.dirLightDirection, dirLightDirection.data(),
-                             SHADER_UNIFORM_VEC3, dirLightCountGpu});
-  dirLightUploads.push_back({m_locs.dirLightIntensity, dirLightIntensity.data(),
-                             SHADER_UNIFORM_VEC3, dirLightCountGpu});
+  const auto dirLightUploads = std::to_array<UniformArrayUpload>({
+      {m_locs.dirLightDirection, dirLightDirection.data(), SHADER_UNIFORM_VEC3,
+       dirLightCountGpu},
+      {m_locs.dirLightIntensity, dirLightIntensity.data(), SHADER_UNIFORM_VEC3,
+       dirLightCountGpu},
+  });
 
   UploadUniformArrays(m_shader, dirLightUploads);
 
@@ -223,16 +219,14 @@ void RaytraceRenderer::uploadScene(const scene::Scene &scene) {
   const auto spotlightIntensity = PackArray<Vector3, MAX_LIGHTS>(
       scene.spotlights, spotlightCount, &Spotlight::intensity);
 
-  UniformUploadList<UniformArrayUpload> spotlightUploads;
-  spotlightUploads.push_back({m_locs.spotlightPosition,
-                              spotlightPosition.data(), SHADER_UNIFORM_VEC3,
-                              spotlightCountGpu});
-  spotlightUploads.push_back({m_locs.spotlightDirectionCutoff,
-                              spotlightDirectionCutoff.data(),
-                              SHADER_UNIFORM_VEC4, spotlightCountGpu});
-  spotlightUploads.push_back({m_locs.spotlightIntensity,
-                              spotlightIntensity.data(), SHADER_UNIFORM_VEC3,
-                              spotlightCountGpu});
+  const auto spotlightUploads = std::to_array<UniformArrayUpload>({
+      {m_locs.spotlightPosition, spotlightPosition.data(), SHADER_UNIFORM_VEC3,
+       spotlightCountGpu},
+      {m_locs.spotlightDirectionCutoff, spotlightDirectionCutoff.data(),
+       SHADER_UNIFORM_VEC4, spotlightCountGpu},
+      {m_locs.spotlightIntensity, spotlightIntensity.data(),
+       SHADER_UNIFORM_VEC3, spotlightCountGpu},
+  });
 
   UploadUniformArrays(m_shader, spotlightUploads);
 }
