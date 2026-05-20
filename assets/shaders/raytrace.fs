@@ -42,9 +42,15 @@ struct HitRecord {
     float distance;
     vec3 position;
     vec3 normal;
+    bool frontFace;
     vec3 color;
     float shininess;
 };
+
+void setFaceNormal(Ray ray, vec3 outwardNormal, inout HitRecord rec) {
+    rec.frontFace = dot(ray.direction, outwardNormal) < 0.0;
+    rec.normal = rec.frontFace ? outwardNormal : -outwardNormal;
+}
 
 Ray makeCameraRay() {
     vec2 fragUv = gl_FragCoord.xy / max(iResolution, vec2(1.0));
@@ -86,25 +92,50 @@ void intersectSphere(Ray ray, vec3 position, float radius, vec4 mat, inout HitRe
     closest.hit = true;
     closest.distance = t;
     closest.position = hitPos;
-    closest.normal = (hitPos - position) / radius;
+    setFaceNormal(ray, (hitPos - position) / radius, closest);
     closest.color = mat.xyz;
     closest.shininess = mat.w;
 }
 
-void intersectPlane(Ray ray, vec3 normal, float offset, vec4 mat, inout HitRecord closest)
-{}
+void intersectPlane(Ray ray, vec3 normal, float offset, vec4 mat, inout HitRecord closest) {
+    vec3 n = normalize(normal);
 
-HitRecord emptyHit() {
-    HitRecord record;
-    record.hit = false;
-    record.distance = 1e20;
-    record.position = vec3(0.0);
-    record.normal = vec3(0.0, 1.0, 0.0);
-    record.color = vec3(0.0);
-    record.shininess = 0.0;
-    return record;
+    float denom = dot(n, ray.direction);
+
+    // Ray is parallel to the plane
+    if (abs(denom) < EPSILON) {
+        return;
+    }
+
+    float t = -(dot(n, ray.origin) + offset) / denom;
+
+    if (t <= EPSILON || t >= closest.distance) {
+        return;
+    }
+
+    vec3 hitPos = ray.origin + t * ray.direction;
+
+    closest.hit = true;
+    closest.distance = t;
+    closest.position = hitPos;
+
+    setFaceNormal(ray, n, closest);
+
+    closest.color = mat.xyz;
+    closest.shininess = mat.w;
 }
 
+HitRecord emptyHit() {
+    HitRecord rec;
+    rec.hit = false;
+    rec.distance = 1e20;
+    rec.position = vec3(0.0);
+    rec.normal = vec3(0.0);
+    rec.frontFace = false;
+    rec.color = vec3(0.0);
+    rec.shininess = 0.0;
+    return rec;
+}
 HitRecord hit(Ray ray) {
     HitRecord closest = emptyHit();
 
