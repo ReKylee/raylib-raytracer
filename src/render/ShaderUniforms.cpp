@@ -34,10 +34,7 @@ void LoadShaderLocations(Shader shader, ShaderLocations &locations) {
   constexpr auto scalarUniforms = std::to_array<UniformLocation>({
       {&ShaderLocations::resolution, shader_uniforms::resolution},
       {&ShaderLocations::time, shader_uniforms::time},
-      {&ShaderLocations::cameraPosition, shader_uniforms::cameraPosition},
-      {&ShaderLocations::cameraForward, shader_uniforms::cameraForward},
-      {&ShaderLocations::cameraRight, shader_uniforms::cameraRight},
-      {&ShaderLocations::cameraUp, shader_uniforms::cameraUp},
+      {&ShaderLocations::cameraToWorld, shader_uniforms::cameraToWorld},
       {&ShaderLocations::cameraFovY, shader_uniforms::cameraFovY},
       {&ShaderLocations::sphereCount, shader_uniforms::sphereCount},
       {&ShaderLocations::planeCount, shader_uniforms::planeCount},

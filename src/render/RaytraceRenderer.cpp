@@ -76,6 +76,15 @@ namespace {
 template <typename Upload>
 using UniformUploadList = std::inplace_vector<Upload, 8>;
 
+Matrix CreateCameraToWorld(const scene::CameraData &camera) {
+  return Matrix{
+      camera.right.x,   camera.up.x,   camera.forward.x,   camera.position.x,
+      camera.right.y,   camera.up.y,   camera.forward.y,   camera.position.y,
+      camera.right.z,   camera.up.z,   camera.forward.z,   camera.position.z,
+      0.0f,             0.0f,          0.0f,               1.0f,
+  };
+}
+
 } // namespace
 
 RaytraceRenderer::RaytraceRenderer(const char *shaderPath) {
@@ -102,14 +111,11 @@ void RaytraceRenderer::updateFrame(int width, int height,
 }
 
 void RaytraceRenderer::uploadCamera(const scene::CameraData &camera) {
+  const Matrix cameraToWorld = CreateCameraToWorld(camera);
+
+  SetShaderValueMatrix(m_shader, m_locs.cameraToWorld, cameraToWorld);
+
   UniformUploadList<UniformUpload> cameraUniforms;
-  cameraUniforms.push_back(
-      {m_locs.cameraPosition, &camera.position, SHADER_UNIFORM_VEC3});
-  cameraUniforms.push_back(
-      {m_locs.cameraForward, &camera.forward, SHADER_UNIFORM_VEC3});
-  cameraUniforms.push_back(
-      {m_locs.cameraRight, &camera.right, SHADER_UNIFORM_VEC3});
-  cameraUniforms.push_back({m_locs.cameraUp, &camera.up, SHADER_UNIFORM_VEC3});
   cameraUniforms.push_back(
       {m_locs.cameraFovY, &camera.fovY, SHADER_UNIFORM_FLOAT});
 

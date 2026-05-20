@@ -17,10 +17,7 @@ namespace shader_uniforms {
 constexpr const char *resolution = "iResolution";
 constexpr const char *time = "iTime";
 
-constexpr const char *cameraPosition = "uCameraPosition";
-constexpr const char *cameraForward = "uCameraForward";
-constexpr const char *cameraRight = "uCameraRight";
-constexpr const char *cameraUp = "uCameraUp";
+constexpr const char *cameraToWorld = "uCameraToWorld";
 constexpr const char *cameraFovY = "uCameraFovY";
 
 constexpr const char *sphereCount = "uSphereCount";
@@ -48,10 +45,7 @@ struct ShaderLocations {
   int resolution = -1;
   int time = -1;
 
-  int cameraPosition = -1;
-  int cameraForward = -1;
-  int cameraRight = -1;
-  int cameraUp = -1;
+  int cameraToWorld = -1;
   int cameraFovY = -1;
 
   int sphereCount = -1;

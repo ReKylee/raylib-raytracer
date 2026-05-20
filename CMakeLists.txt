@@ -87,11 +87,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+add_custom_target(${PROJECT_NAME}_assets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets"
+        "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets"
+    COMMENT "Copying assets to runtime directory"
 )
+
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_assets)
 
 # Web / Emscripten config
 if (PLATFORM STREQUAL "Web")
