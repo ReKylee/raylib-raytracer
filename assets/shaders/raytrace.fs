@@ -25,13 +25,13 @@ uniform vec4 uPlaneData[MAX_PLANES]; // xyz normal, w offset
 uniform vec4 uPlaneColor[MAX_PLANES]; // rgb color, w shininess
 
 uniform int uDirLightCount;
-uniform vec4 uDirLightDirection[MAX_LIGHTS];
-uniform vec4 uDirLightIntensity[MAX_LIGHTS];
+uniform vec3 uDirLightDirection[MAX_LIGHTS];
+uniform vec3 uDirLightIntensity[MAX_LIGHTS];
 
 uniform int uSpotlightCount;
-uniform vec4 uSpotlightPositionCutoff[MAX_LIGHTS]; // xyz position, w cutoff cosine
-uniform vec4 uSpotlightDirection[MAX_LIGHTS];
-uniform vec4 uSpotlightIntensity[MAX_LIGHTS];
+uniform vec3 uSpotlightPosition[MAX_LIGHTS];
+uniform vec4 uSpotlightDirectionCutoff[MAX_LIGHTS]; // xyz direction, w cutoff cosine
+uniform vec3 uSpotlightIntensity[MAX_LIGHTS];
 
 void main() {
     vec2 uv = fragTexCoord * 2.0 - 1.0;

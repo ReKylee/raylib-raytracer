@@ -5,6 +5,8 @@
 #include <variant>
 #include <vector>
 
+namespace raytracer::scene {
+
 constexpr int MAX_SPHERES = 16;
 constexpr int MAX_PLANES = 16;
 constexpr int MAX_LIGHTS = 8;
@@ -25,6 +27,7 @@ struct Plane {
   float shininess = 0.0f;
 };
 
+// Temporary parser representation before objects are split into render arrays.
 using SceneObject = std::variant<Sphere, Plane>;
 
 struct AmbientLight {
@@ -40,7 +43,7 @@ struct Spotlight {
   Vector3 position{};
   Vector3 direction{};
   Vector3 intensity{};
-  float cosine_cutoff;
+  float cosine_cutoff = 0.0f;
 };
 
 struct CameraData {
@@ -53,9 +56,11 @@ struct CameraData {
 
 struct Scene {
   CameraData camera{};
-  AmbientLight ambientlight;
+  AmbientLight ambient;
   std::vector<Sphere> spheres{};
   std::vector<Plane> planes{};
   std::vector<DirectionalLight> dirlights{};
   std::vector<Spotlight> spotlights{};
 };
+
+} // namespace raytracer::scene
