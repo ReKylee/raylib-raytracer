@@ -1,6 +1,9 @@
 #include "render/RaytraceRenderer.hpp"
 
+#include "raymath.h"
+
 #include <array>
+#include <cmath>
 #include <cstddef>
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -77,12 +80,37 @@ template <typename Upload>
 using UniformUploadList = std::inplace_vector<Upload, 8>;
 
 Matrix CreateCameraToWorld(const scene::CameraData &camera) {
-  return Matrix{
-      camera.right.x,   camera.up.x,   camera.forward.x,   camera.position.x,
-      camera.right.y,   camera.up.y,   camera.forward.y,   camera.position.y,
-      camera.right.z,   camera.up.z,   camera.forward.z,   camera.position.z,
-      0.0f,             0.0f,          0.0f,               1.0f,
-  };
+  const Vector3 forward = Vector3Normalize(camera.forward);
+  const Vector3 right =
+      Vector3Normalize(Vector3CrossProduct(forward, camera.up));
+  const Vector3 up = Vector3CrossProduct(right, forward);
+
+  Matrix cameraToWorld = MatrixIdentity();
+  cameraToWorld.m0 = right.x;
+  cameraToWorld.m1 = right.y;
+  cameraToWorld.m2 = right.z;
+
+  cameraToWorld.m4 = up.x;
+  cameraToWorld.m5 = up.y;
+  cameraToWorld.m6 = up.z;
+
+  cameraToWorld.m8 = -forward.x;
+  cameraToWorld.m9 = -forward.y;
+  cameraToWorld.m10 = -forward.z;
+
+  cameraToWorld.m12 = camera.position.x;
+  cameraToWorld.m13 = camera.position.y;
+  cameraToWorld.m14 = camera.position.z;
+
+  return cameraToWorld;
+}
+
+Vector2 CreateViewportScale(int width, int height, float fovYDegrees) {
+  const float safeHeight = static_cast<float>(height > 0 ? height : 1);
+  const float aspect = static_cast<float>(width) / safeHeight;
+  const float verticalScale = std::tan(fovYDegrees * DEG2RAD * 0.5f);
+
+  return {aspect * verticalScale, verticalScale};
 }
 
 } // namespace
@@ -107,24 +135,24 @@ void RaytraceRenderer::updateFrame(int width, int height,
   frameUniforms.push_back({m_locs.time, &time, SHADER_UNIFORM_FLOAT});
 
   UploadUniforms(m_shader, frameUniforms);
-  uploadCamera(camera);
+  uploadCamera(width, height, camera);
 }
 
-void RaytraceRenderer::uploadCamera(const scene::CameraData &camera) {
+void RaytraceRenderer::uploadCamera(int width, int height,
+                                    const scene::CameraData &camera) {
   const Matrix cameraToWorld = CreateCameraToWorld(camera);
+  const Vector2 viewportScale = CreateViewportScale(width, height, camera.fovY);
 
   SetShaderValueMatrix(m_shader, m_locs.cameraToWorld, cameraToWorld);
 
   UniformUploadList<UniformUpload> cameraUniforms;
   cameraUniforms.push_back(
-      {m_locs.cameraFovY, &camera.fovY, SHADER_UNIFORM_FLOAT});
+      {m_locs.cameraViewportScale, &viewportScale, SHADER_UNIFORM_VEC2});
 
   UploadUniforms(m_shader, cameraUniforms);
 }
 
 void RaytraceRenderer::uploadScene(const scene::Scene &scene) {
-  uploadCamera(scene.camera);
-
   const std::size_t sphereCount = ClampedCount<MAX_SPHERES>(scene.spheres);
   const std::size_t planeCount = ClampedCount<MAX_PLANES>(scene.planes);
   const std::size_t dirLightCount = ClampedCount<MAX_LIGHTS>(scene.dirlights);

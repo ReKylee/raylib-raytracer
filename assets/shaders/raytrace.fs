@@ -1,5 +1,7 @@
 #version 330
 
+#define EPSILON 0.001
+
 in vec2 fragTexCoord;
 in vec4 fragColor;
 
@@ -9,7 +11,7 @@ uniform vec2 iResolution;
 uniform float iTime;
 
 uniform mat4 uCameraToWorld;
-uniform float uCameraFovY;
+uniform vec2 uCameraViewportScale;
 
 uniform vec3 uAmbientIntensity;
 
@@ -44,57 +46,105 @@ struct HitRecord {
     float shininess;
 };
 
-Ray makeCameraRay(vec2 fragUv) {
+Ray makeCameraRay() {
+    vec2 fragUv = gl_FragCoord.xy / max(iResolution, vec2(1.0));
     vec2 ndc = fragUv * 2.0 - 1.0;
-    ndc.x *= iResolution.x / iResolution.y;
 
-    float fovScale = tan(radians(uCameraFovY) * 0.5);
-    vec3 cameraDirection = normalize(vec3(
-                ndc * fovScale,
-                1.0
-            ));
-
+    vec3 cameraDirection = vec3(ndc * uCameraViewportScale, -1.0);
     vec3 origin = uCameraToWorld[3].xyz;
     vec3 direction = normalize((uCameraToWorld * vec4(cameraDirection, 0.0)).xyz);
 
     return Ray(origin, direction);
 }
 
-HitRecord hit(Ray ray) {
+void intersectSphere(Ray ray, vec3 position, float radius, vec4 mat, inout HitRecord closest) {
+    vec3 oc = ray.origin - position;
+
+    float halfB = dot(oc, ray.direction);
+    float c = dot(oc, oc) - radius * radius;
+
+    float discriminant = halfB * halfB - c;
+
+    if (discriminant < 0.0) {
+        return;
+    }
+
+    float sqrtD = sqrt(discriminant);
+
+    float t = -halfB - sqrtD;
+
+    if (t <= EPSILON) {
+        t = -halfB + sqrtD;
+    }
+
+    if (t <= EPSILON || t >= closest.distance) {
+        return;
+    }
+
+    vec3 hitPos = ray.origin + t * ray.direction;
+
+    closest.hit = true;
+    closest.distance = t;
+    closest.position = hitPos;
+    closest.normal = (hitPos - position) / radius;
+    closest.color = mat.xyz;
+    closest.shininess = mat.w;
+}
+
+void intersectPlane(Ray ray, vec3 normal, float offset, vec4 mat, inout HitRecord closest)
+{}
+
+HitRecord emptyHit() {
     HitRecord record;
     record.hit = false;
-    record.distance = 0.0;
+    record.distance = 1e20;
     record.position = vec3(0.0);
     record.normal = vec3(0.0, 1.0, 0.0);
     record.color = vec3(0.0);
     record.shininess = 0.0;
-
     return record;
+}
+
+HitRecord hit(Ray ray) {
+    HitRecord closest = emptyHit();
+
+    for (int s = 0; s < uSphereCount; s++) {
+        vec4 posRadius = uSphereData[s];
+        vec4 material = uSphereColor[s];
+        intersectSphere(ray, posRadius.xyz, posRadius.w, material, closest);
+    }
+    for (int p = 0; p < uPlaneCount; p++) {
+        vec4 normalOffset = uPlaneData[p];
+        vec4 material = uPlaneColor[p];
+        intersectPlane(ray, normalOffset.xyz, normalOffset.w, material, closest);
+    }
+
+    return closest;
 }
 
 vec3 light(Ray ray, HitRecord record) {
     return record.color;
 }
 
-vec3 background_color(Ray ray) {
-    vec3 a = 0.5 * (ray.direction + 1.0);
-    return (1.0 - a) * vec3(1.0, 1.0, 1.0) + a * vec3(0.5, 0.7, 1.0);
+vec3 backgroundColor(Ray ray) {
+    float a = 0.5 * (normalize(ray.direction).y + 1.0);
+    return (1.0 - a) * vec3(1.0) + a * vec3(0.5, 0.7, 1.0);
 }
 
-vec3 ray_color(Ray ray) {
+vec3 rayColor(Ray ray) {
     HitRecord record = hit(ray);
 
     if (!record.hit) {
-        return background_color(ray);
+        return backgroundColor(ray);
     }
 
     return light(ray, record);
 }
 
 void main() {
-    Ray ray = makeCameraRay(fragTexCoord);
+    Ray ray = makeCameraRay();
 
-    vec3 color = ray_color(ray);
+    vec3 color = rayColor(ray);
 
     finalColor = vec4(color, 1.0);
 }

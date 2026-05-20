@@ -20,7 +20,7 @@ public:
   void render(int width, int height) const;
 
 private:
-  void uploadCamera(const scene::CameraData &camera);
+  void uploadCamera(int width, int height, const scene::CameraData &camera);
 
 private:
   Shader m_shader{};

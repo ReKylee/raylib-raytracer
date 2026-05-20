@@ -5,10 +5,10 @@
 
 namespace raytracer::app {
 
+using scene::DirectionalLight;
 using scene::Plane;
 using scene::Scene;
 using scene::Sphere;
-using scene::DirectionalLight;
 using scene::Spotlight;
 
 Application::Application(int width, int height, std::string title)
@@ -41,58 +41,97 @@ void Application::createTestScene() {
   m_scene = Scene{
       .camera =
           {
-              .position = {0.0f, 0.5f, 4.0f},
-              .forward = {0.0f, 0.0f, -1.0f},
-              .right = {1.0f, 0.0f, 0.0f},
+              .position = {0.0f, 0.8f, 5.0f},
+              .forward = {0.0f, -0.08f, -1.0f},
               .up = {0.0f, 1.0f, 0.0f},
-              .fovY = 60.0f,
+              .fovY = 55.0f,
           },
-      .ambient = {.intensity = {0.08f, 0.08f, 0.1f}},
+
+      .ambient = {.intensity = {0.06f, 0.06f, 0.075f}},
+
       .spheres =
           {
+              // Main center sphere
               Sphere{
                   .position = {0.0f, 0.0f, 0.0f},
                   .radius = 1.0f,
-                  .color = {1.0f, 0.2f, 0.2f},
+                  .color = {1.0f, 0.22f, 0.18f},
+                  .shininess = 48.0f,
+              },
+
+              // Left small cool sphere
+              Sphere{
+                  .position = {-1.65f, -0.35f, -0.85f},
+                  .radius = 0.65f,
+                  .color = {0.12f, 0.55f, 1.0f},
+                  .shininess = 96.0f,
+              },
+
+              // Right green sphere
+              Sphere{
+                  .position = {1.55f, -0.25f, -1.1f},
+                  .radius = 0.75f,
+                  .color = {0.25f, 1.0f, 0.38f},
                   .shininess = 32.0f,
               },
+
+              // Small yellow sphere in front, good for testing depth sorting
               Sphere{
-                  .position = {-1.5f, -0.2f, -1.0f},
-                  .radius = 0.6f,
-                  .color = {0.2f, 0.8f, 1.0f},
-                  .shininess = 64.0f,
+                  .position = {-0.55f, -0.72f, 1.35f},
+                  .radius = 0.28f,
+                  .color = {1.0f, 0.82f, 0.18f},
+                  .shininess = 16.0f,
               },
+
+              // Small purple sphere farther back
               Sphere{
-                  .position = {1.5f, -0.3f, -1.2f},
-                  .radius = 0.7f,
-                  .color = {0.3f, 1.0f, 0.4f},
-                  .shininess = 24.0f,
+                  .position = {0.85f, 0.55f, -1.75f},
+                  .radius = 0.38f,
+                  .color = {0.75f, 0.35f, 1.0f},
+                  .shininess = 128.0f,
               },
           },
+
       .planes =
           {
+              // Ground plane.
+              // This assumes your plane equation is dot(position, normal) +
+              // offset = 0, so offset = 1.0 gives y = -1.0.
               Plane{
                   .normal = {0.0f, 1.0f, 0.0f},
                   .offset = 1.0f,
-                  .color = {0.7f, 0.7f, 0.7f},
-                  .shininess = 8.0f,
+                  .color = {0.72f, 0.72f, 0.68f},
+                  .shininess = 12.0f,
               },
           },
+
       .dirlights =
           {
+              // Warm sunlight from upper-left/front
               DirectionalLight{
-                  .direction = {-0.5f, -1.0f, -0.4f},
-                  .intensity = {0.7f, 0.65f, 0.55f},
+                  .direction = {-0.45f, -0.9f, -0.35f},
+                  .intensity = {0.75f, 0.68f, 0.55f},
               },
           },
+
       .spotlights =
           {
+              // Cool-ish spotlight from camera/right side
               Spotlight{
-                  .position = {2.0f, 3.0f, 3.0f},
-                  .direction = {-0.45f, -0.75f, -0.5f},
-                  .intensity = {3.0f, 2.8f, 2.4f},
+                  .position = {2.8f, 3.5f, 3.2f},
+                  .direction = {-0.55f, -0.75f, -0.55f},
+                  .intensity = {2.8f, 3.1f, 3.8f},
                   .cosine_cutoff =
-                      static_cast<float>(std::cos(25.0f * DEG2RAD)),
+                      static_cast<float>(std::cos(22.0f * DEG2RAD)),
+              },
+
+              // Soft warm fill from left/back
+              Spotlight{
+                  .position = {-3.0f, 2.2f, 1.0f},
+                  .direction = {0.7f, -0.45f, -0.25f},
+                  .intensity = {1.4f, 0.95f, 0.65f},
+                  .cosine_cutoff =
+                      static_cast<float>(std::cos(35.0f * DEG2RAD)),
               },
           },
   };

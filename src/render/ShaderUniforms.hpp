@@ -18,7 +18,7 @@ constexpr const char *resolution = "iResolution";
 constexpr const char *time = "iTime";
 
 constexpr const char *cameraToWorld = "uCameraToWorld";
-constexpr const char *cameraFovY = "uCameraFovY";
+constexpr const char *cameraViewportScale = "uCameraViewportScale";
 
 constexpr const char *sphereCount = "uSphereCount";
 constexpr const char *sphereData = "uSphereData";
@@ -46,7 +46,7 @@ struct ShaderLocations {
   int time = -1;
 
   int cameraToWorld = -1;
-  int cameraFovY = -1;
+  int cameraViewportScale = -1;
 
   int sphereCount = -1;
   int sphereData = -1;
