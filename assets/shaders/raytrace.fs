@@ -2,7 +2,6 @@
 
 #define EPSILON 0.001
 
-in vec2 fragTexCoord;
 in vec4 fragColor;
 
 out vec4 finalColor;
@@ -32,6 +31,10 @@ uniform vec3 uSpotlightPosition[MAX_LIGHTS];
 uniform vec4 uSpotlightDirectionCutoff[MAX_LIGHTS]; // xyz direction, w cutoff cosine
 uniform vec3 uSpotlightIntensity[MAX_LIGHTS];
 
+#define CHECKER_A 1.0
+#define CHECKER_B 0.5
+#define INV_SQUARE_SIZE 2.0
+
 struct Ray {
     vec3 origin;
     vec3 direction;
@@ -44,8 +47,21 @@ struct HitRecord {
     vec3 normal;
     bool frontFace;
     vec3 color;
+    float diffuseMultiplier;
     float shininess;
 };
+HitRecord emptyHit() {
+    HitRecord rec;
+    rec.hit = false;
+    rec.distance = 1e20;
+    rec.position = vec3(0.0);
+    rec.normal = vec3(0.0);
+    rec.frontFace = false;
+    rec.color = vec3(0.0);
+    rec.diffuseMultiplier = 0.0;
+    rec.shininess = 0.0;
+    return rec;
+}
 
 void setFaceNormal(Ray ray, vec3 outwardNormal, inout HitRecord rec) {
     rec.frontFace = dot(ray.direction, outwardNormal) < 0.0;
@@ -97,23 +113,45 @@ void intersectSphere(Ray ray, vec3 position, float radius, vec4 mat, inout HitRe
     closest.shininess = mat.w;
 }
 
-void intersectPlane(Ray ray, vec3 normal, float offset, vec4 mat, inout HitRecord closest) {
-    vec3 n = normalize(normal);
+float positionToCheckers(vec3 pos, vec3 normal)
+{
+    vec3 an = abs(normal);
 
-    float denom = dot(n, ray.direction);
+    // Choose projection by dropping the dominant normal axis.
+    // useYZ = normal mostly X
+    // useXZ = normal mostly Y
+    // useXY = normal mostly Z
+    float useYZ = step(max(an.y, an.z), an.x);
+    float useXZ = (1.0 - useYZ) * step(an.z, an.y);
+    float useXY = 1.0 - useYZ - useXZ;
 
-    // Ray is parallel to the plane
+    vec2 uv =
+        useYZ * pos.yz +
+            useXZ * pos.xz +
+            useXY * pos.xy;
+
+    vec2 cell = floor(uv * INV_SQUARE_SIZE);
+    float checker = fract(0.5 * (cell.x + cell.y)) * 2.0;
+
+    return mix(CHECKER_A, CHECKER_B, checker);
+}
+
+void intersectPlane(Ray ray, vec3 normal, float d, vec4 mat, inout HitRecord closest)
+{
+    float denom = dot(normal, ray.direction);
+
     if (abs(denom) < EPSILON) {
         return;
     }
 
-    float t = -(dot(n, ray.origin) + offset) / denom;
+    float t = -(dot(normal, ray.origin) + d) / denom;
 
     if (t <= EPSILON || t >= closest.distance) {
         return;
     }
 
     vec3 hitPos = ray.origin + t * ray.direction;
+    vec3 n = normalize(normal);
 
     closest.hit = true;
     closest.distance = t;
@@ -121,21 +159,10 @@ void intersectPlane(Ray ray, vec3 normal, float offset, vec4 mat, inout HitRecor
 
     setFaceNormal(ray, n, closest);
 
-    closest.color = mat.xyz;
+    closest.color = mat.xyz * positionToCheckers(hitPos, n);
     closest.shininess = mat.w;
 }
 
-HitRecord emptyHit() {
-    HitRecord rec;
-    rec.hit = false;
-    rec.distance = 1e20;
-    rec.position = vec3(0.0);
-    rec.normal = vec3(0.0);
-    rec.frontFace = false;
-    rec.color = vec3(0.0);
-    rec.shininess = 0.0;
-    return rec;
-}
 HitRecord hit(Ray ray) {
     HitRecord closest = emptyHit();
 

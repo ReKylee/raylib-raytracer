@@ -95,11 +95,9 @@ void Application::createTestScene() {
       .planes =
           {
               // Ground plane.
-              // This assumes your plane equation is dot(position, normal) +
-              // offset = 0, so offset = 1.0 gives y = -1.0.
               Plane{
-                  .normal = {0.0f, 1.0f, 0.0f},
-                  .offset = 1.0f,
+                  .normal = {0.0f, -0.5f, -1.0f},
+                  .offset = -3.5f,
                   .color = {0.72f, 0.72f, 0.68f},
                   .shininess = 12.0f,
               },
