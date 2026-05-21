@@ -1,4 +1,5 @@
 #include "app/Application.hpp"
+#include "app/CameraControls.hpp"
 
 #include <cmath>
 #include <utility>
@@ -16,10 +17,12 @@ Application::Application(int width, int height, std::string title)
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
   InitWindow(m_width, m_height, m_title.c_str());
+  SetExitKey(KEY_NULL);
   SetTargetFPS(60);
 
   m_renderer.emplace("assets/shaders/raytrace.fs");
   createTestScene();
+  DisableCursor();
 
   // Static scene data only needs to be uploaded once, unless the scene changes.
   m_renderer->uploadScene(m_scene);
@@ -119,8 +122,7 @@ void Application::createTestScene() {
                   .position = {2.8f, 3.5f, 3.2f},
                   .direction = {-0.55f, -0.75f, -0.55f},
                   .intensity = {2.8f, 3.1f, 3.8f},
-                  .cosineCutoff =
-                      static_cast<float>(std::cos(22.0f * DEG2RAD)),
+                  .cosineCutoff = static_cast<float>(std::cos(22.0f * DEG2RAD)),
               },
 
               // Soft warm fill from left/back
@@ -128,17 +130,19 @@ void Application::createTestScene() {
                   .position = {-3.0f, 2.2f, 1.0f},
                   .direction = {0.7f, -0.45f, -0.25f},
                   .intensity = {1.4f, 0.95f, 0.65f},
-                  .cosineCutoff =
-                      static_cast<float>(std::cos(35.0f * DEG2RAD)),
+                  .cosineCutoff = static_cast<float>(std::cos(35.0f * DEG2RAD)),
               },
           },
   };
+
+  camera::Initialize(m_scene.camera, m_cameraOrientation);
 }
 
 void Application::update() {
   m_width = GetScreenWidth();
   m_height = GetScreenHeight();
 
+  camera::UpdateFreeCamera(m_scene.camera, m_cameraOrientation);
   m_renderer->updateFrame(m_width, m_height, m_scene.camera);
 }
 

@@ -31,6 +31,7 @@ private:
 
   std::optional<render::RaytraceRenderer> m_renderer;
   scene::Scene m_scene{};
+  Vector4 m_cameraOrientation{};
 };
 
 } // namespace raytracer::app
