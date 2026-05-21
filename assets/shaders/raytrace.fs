@@ -43,6 +43,8 @@ uniform vec3 uSpotlightIntensity[MAX_LIGHTS];
 #define DEFAULT_SPHERE_REFLECTIVITY 0.25
 #define DEFAULT_PLANE_REFLECTIVITY 0.0
 #define MIN_LIGHT_DISTANCE 0.1
+#define AA_SAMPLE_OFFSET 0.25
+#define AA_SAMPLE_COUNT 4.0
 
 // Types
 
@@ -84,8 +86,8 @@ void setFaceNormal(Ray ray, vec3 outwardNormal, inout HitRecord record) {
 
 // Camera
 
-Ray makeCameraRay() {
-    vec2 fragUv = gl_FragCoord.xy / max(iResolution, vec2(1.0));
+Ray makeCameraRay(vec2 pixelOffset) {
+    vec2 fragUv = (gl_FragCoord.xy + pixelOffset) / max(iResolution, vec2(1.0));
     vec2 ndc = fragUv * 2.0 - 1.0;
 
     vec3 cameraDirection = vec3(ndc * uCameraViewportScale, -1.0);
@@ -318,10 +320,11 @@ vec3 raytrace(Ray initialRay) {
             break;
         }
 
-        vec3 localColor = shadeHit(ray, hit);
         float reflectivity = clamp(hit.reflectivity, 0.0, 1.0);
+        vec3 localColor = shadeHit(ray, hit);
+        vec3 surfaceContribution = (1.0 - reflectivity) * localColor;
 
-        accumulatedColor += reflectionThroughput * (1.0 - reflectivity) * localColor;
+        accumulatedColor += reflectionThroughput * surfaceContribution;
 
         if (reflectivity <= 0.001) {
             break;
@@ -341,8 +344,13 @@ vec3 raytrace(Ray initialRay) {
 // Entry point
 
 void main() {
-    Ray ray = makeCameraRay();
-    vec3 color = raytrace(ray);
+    vec3 color = vec3(0.0);
+
+    color += raytrace(makeCameraRay(vec2(-AA_SAMPLE_OFFSET, -AA_SAMPLE_OFFSET)));
+    color += raytrace(makeCameraRay(vec2(AA_SAMPLE_OFFSET, -AA_SAMPLE_OFFSET)));
+    color += raytrace(makeCameraRay(vec2(-AA_SAMPLE_OFFSET, AA_SAMPLE_OFFSET)));
+    color += raytrace(makeCameraRay(vec2(AA_SAMPLE_OFFSET, AA_SAMPLE_OFFSET)));
+    color /= AA_SAMPLE_COUNT;
 
     finalColor = vec4(color, 1.0);
 }
