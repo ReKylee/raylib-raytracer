@@ -47,7 +47,7 @@ uniform vec3 uSpotlightIntensity[MAX_LIGHTS];
 #define MIN_LIGHT_DISTANCE 0.1
 #define SPOTLIGHT_SOFT_EDGE 0.08
 #define EXPOSURE 1.0
-#define DISPLAY_GAMMA 2.2
+#define DISPLAY_GAMMA 1.5
 #define TONE_MAP_RAW 0
 #define TONE_MAP_ACES 1
 #define LIGHT_MODE_ALL 0
@@ -306,12 +306,12 @@ vec3 shadeHit(Ray ray, HitRecord record) {
             float shadowVisibility = directionalLightVisibility(record, directionToLight);
 
             shadedColor += phongLightContribution(
-                record,
-                directionToLight,
-                uDirectionalLightIntensity[lightIndex],
-                directionToCamera,
-                shadowVisibility
-            );
+                    record,
+                    directionToLight,
+                    uDirectionalLightIntensity[lightIndex],
+                    directionToCamera,
+                    shadowVisibility
+                );
         }
     }
 
@@ -336,21 +336,21 @@ vec3 shadeHit(Ray ray, HitRecord record) {
             float spotlightCutoff = uSpotlightDirectionCutoff[lightIndex].w;
             float coneAngleCosine = dot(spotlightDirection, directionFromLightUnit);
             float coneVisibility = spotlightConeVisibility(
-                coneAngleCosine,
-                spotlightCutoff
-            );
+                    coneAngleCosine,
+                    spotlightCutoff
+                );
             float shadowVisibility = spotlightVisibility(record, directionToLight, distanceToLight);
             vec3 lightIntensity = uSpotlightIntensity[lightIndex] *
-                coneVisibility *
-                spotlightAttenuation(distanceToLight);
+                    coneVisibility *
+                    spotlightAttenuation(distanceToLight);
 
             shadedColor += phongLightContribution(
-                record,
-                directionToLight,
-                lightIntensity,
-                directionToCamera,
-                shadowVisibility
-            );
+                    record,
+                    directionToLight,
+                    lightIntensity,
+                    directionToCamera,
+                    shadowVisibility
+                );
         }
     }
 
@@ -401,14 +401,14 @@ vec3 raytrace(Ray initialRay) {
 
 // Post-processing
 
-vec3 acesToneMap(vec3 color) {
-    const float a = 2.51;
-    const float b = 0.03;
-    const float c = 2.43;
-    const float d = 0.59;
-    const float e = 0.14;
-
-    return clamp((color * (a * color + b)) / (color * (c * color + d) + e), 0.0, 1.0);
+vec3 acesToneMap(vec3 v) {
+    v *= 0.6f;
+    const float a = 2.51f;
+    const float b = 0.03f;
+    const float c = 2.43f;
+    const float d = 0.59f;
+    const float e = 0.14f;
+    return clamp((v * (a * v + b)) / (v * (c * v + d) + e), 0.0f, 1.0f);
 }
 
 vec3 gammaCorrect(vec3 color) {

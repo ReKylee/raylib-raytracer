@@ -157,29 +157,6 @@ void Application::createTestScene() {
                   .color = {0.55f, 0.6f, 0.7f},
                   .shininess = 18.0f,
               },
-
-              // Side walls make the gallery read as a small room.
-              Plane{
-                  .normal = {1.0f, 0.0f, 0.0f},
-                  .offset = 5.2f,
-                  .color = {0.55f, 0.58f, 0.64f},
-                  .shininess = 10.0f,
-              },
-
-              Plane{
-                  .normal = {-1.0f, 0.0f, 0.0f},
-                  .offset = 5.2f,
-                  .color = {0.64f, 0.58f, 0.55f},
-                  .shininess = 10.0f,
-              },
-
-              // Ceiling gives upward views and reflections a bounded surface.
-              Plane{
-                  .normal = {0.0f, -1.0f, 0.0f},
-                  .offset = 3.2f,
-                  .color = {0.46f, 0.48f, 0.52f},
-                  .shininess = 8.0f,
-              },
           },
 
       .directionalLights =
@@ -204,16 +181,16 @@ void Application::createTestScene() {
               Spotlight{
                   .position = {-3.8f, 2.7f, 2.5f},
                   .direction = {0.25f, -0.68f, -0.7f},
-                  .intensity = {3.0f, 4.1f, 6.6f},
-                  .cosineCutoff = static_cast<float>(std::cos(20.0f * DEG2RAD)),
+                  .intensity = {3.8f, 5.2f, 8.0f},
+                  .cosineCutoff = static_cast<float>(std::cos(15.0f * DEG2RAD)),
               },
 
               // Warm wider cone: overlaps the center and right bay.
               Spotlight{
                   .position = {3.8f, 2.35f, 2.1f},
                   .direction = {-0.62f, -0.55f, -0.56f},
-                  .intensity = {4.8f, 2.2f, 0.85f},
-                  .cosineCutoff = static_cast<float>(std::cos(32.0f * DEG2RAD)),
+                  .intensity = {5.6f, 2.4f, 0.75f},
+                  .cosineCutoff = static_cast<float>(std::cos(24.0f * DEG2RAD)),
               },
           },
   };
