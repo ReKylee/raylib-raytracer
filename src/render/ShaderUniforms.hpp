@@ -16,6 +16,8 @@ namespace shader_uniforms {
 
 constexpr const char *resolution = "iResolution";
 constexpr const char *time = "iTime";
+constexpr const char *toneMapMode = "uToneMapMode";
+constexpr const char *lightMode = "uLightMode";
 
 constexpr const char *cameraToWorld = "uCameraToWorld";
 constexpr const char *cameraViewportScale = "uCameraViewportScale";
@@ -44,6 +46,8 @@ constexpr const char *spotlightIntensity = "uSpotlightIntensity";
 struct ShaderLocations {
   int resolution = -1;
   int time = -1;
+  int toneMapMode = -1;
+  int lightMode = -1;
 
   int cameraToWorld = -1;
   int cameraViewportScale = -1;

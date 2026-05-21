@@ -17,7 +17,7 @@ Application::Application(int width, int height, std::string title)
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
   InitWindow(m_width, m_height, m_title.c_str());
-  SetExitKey(KEY_NULL);
+  SetExitKey(KEY_F12);
   SetTargetFPS(60);
 
   m_renderer.emplace("assets/shaders/raytrace.fs");
@@ -54,7 +54,8 @@ void Application::createTestScene() {
 
       .spheres =
           {
-              // Center: glossy reflections, strong highlights, and self-shadowing.
+              // Center: glossy reflections, strong highlights, and
+              // self-shadowing.
               Sphere{
                   .position = {0.0f, 0.0f, 0.0f},
                   .radius = 1.0f,
@@ -86,7 +87,8 @@ void Application::createTestScene() {
                   .shininess = 16.0f,
               },
 
-              // Back center: visible in reflections and second directional light.
+              // Back center: visible in reflections and second directional
+              // light.
               Sphere{
                   .position = {0.9f, 0.68f, -2.35f},
                   .radius = 0.42f,
@@ -117,11 +119,30 @@ void Application::createTestScene() {
                   .color = {0.12f, 1.0f, 0.82f},
                   .shininess = 48.0f,
               },
+
+              // Directional test: neutral caster for warm left-to-right
+              // shadows.
+              Sphere{
+                  .position = {-4.1f, -0.55f, 1.25f},
+                  .radius = 0.45f,
+                  .color = {0.86f, 0.86f, 0.82f},
+                  .shininess = 36.0f,
+              },
+
+              // Directional test: neutral caster for cool right-to-left
+              // shadows.
+              Sphere{
+                  .position = {4.15f, -0.55f, 0.95f},
+                  .radius = 0.45f,
+                  .color = {0.82f, 0.86f, 0.9f},
+                  .shininess = 36.0f,
+              },
           },
 
       .planes =
           {
-              // Floor: non-unit normal tests plane normalization and checker UVs.
+              // Floor: non-unit normal tests plane normalization and checker
+              // UVs.
               Plane{
                   .normal = {0.0f, 2.0f, 0.0f},
                   .offset = 2.0f,
@@ -163,16 +184,17 @@ void Application::createTestScene() {
 
       .directionalLights =
           {
-              // Warm key direction: hard shadows across the whole room.
+              // Warm key direction: hard colored shadows from the left/front.
               DirectionalLight{
-                  .direction = {0.45f, -0.85f, -0.25f},
-                  .intensity = {0.58f, 0.49f, 0.36f},
+                  .direction = {0.62f, -0.72f, -0.38f},
+                  .intensity = {0.85f, 0.52f, 0.28f},
               },
 
-              // Cool rim direction: verifies multiple directional lights.
+              // Cool key direction: second directional light from the
+              // right/front.
               DirectionalLight{
-                  .direction = {-0.65f, -0.35f, 0.52f},
-                  .intensity = {0.18f, 0.23f, 0.35f},
+                  .direction = {-0.58f, -0.58f, -0.58f},
+                  .intensity = {0.28f, 0.42f, 0.78f},
               },
           },
 
@@ -203,8 +225,10 @@ void Application::update() {
   m_width = GetScreenWidth();
   m_height = GetScreenHeight();
 
+  debug::Update(m_debugState);
   camera::UpdateFreeCamera(m_scene.camera, m_cameraOrientation);
-  m_renderer->updateFrame(m_width, m_height, m_scene.camera);
+  m_renderer->updateFrame(m_width, m_height, m_scene.camera,
+                          debug::ToRenderOptions(m_debugState));
 }
 
 void Application::render() {
@@ -214,6 +238,7 @@ void Application::render() {
   m_renderer->render(m_width, m_height);
 
   DrawFPS(10, 10);
+  debug::DrawOverlay(m_debugState);
 
   EndDrawing();
 }

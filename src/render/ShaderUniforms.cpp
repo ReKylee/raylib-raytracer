@@ -34,6 +34,8 @@ void LoadShaderLocations(Shader shader, ShaderLocations &locations) {
   constexpr auto scalarUniforms = std::to_array<UniformLocation>({
       {&ShaderLocations::resolution, shader_uniforms::resolution},
       {&ShaderLocations::time, shader_uniforms::time},
+      {&ShaderLocations::toneMapMode, shader_uniforms::toneMapMode},
+      {&ShaderLocations::lightMode, shader_uniforms::lightMode},
       {&ShaderLocations::cameraToWorld, shader_uniforms::cameraToWorld},
       {&ShaderLocations::cameraViewportScale,
        shader_uniforms::cameraViewportScale},

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/DebugControls.hpp"
 #include "render/RaytraceRenderer.hpp"
 #include "scene/scene.hpp"
 
@@ -32,6 +33,7 @@ private:
   std::optional<render::RaytraceRenderer> m_renderer;
   scene::Scene m_scene{};
   Vector4 m_cameraOrientation{};
+  debug::State m_debugState{};
 };
 
 } // namespace raytracer::app

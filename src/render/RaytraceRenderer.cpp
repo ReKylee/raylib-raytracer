@@ -120,7 +120,8 @@ RaytraceRenderer::RaytraceRenderer(const char *shaderPath) {
 RaytraceRenderer::~RaytraceRenderer() { UnloadShader(m_shader); }
 
 void RaytraceRenderer::updateFrame(int width, int height,
-                                   const scene::CameraData &camera) {
+                                   const scene::CameraData &camera,
+                                   RenderDebugOptions debugOptions) {
   const float time = static_cast<float>(GetTime());
   const float resolution[2] = {
       static_cast<float>(width),
@@ -130,6 +131,8 @@ void RaytraceRenderer::updateFrame(int width, int height,
   const auto frameUniforms = std::to_array<UniformUpload>({
       {m_locs.resolution, resolution, SHADER_UNIFORM_VEC2},
       {m_locs.time, &time, SHADER_UNIFORM_FLOAT},
+      {m_locs.toneMapMode, &debugOptions.toneMapMode, SHADER_UNIFORM_INT},
+      {m_locs.lightMode, &debugOptions.lightMode, SHADER_UNIFORM_INT},
   });
 
   UploadUniforms(m_shader, frameUniforms);

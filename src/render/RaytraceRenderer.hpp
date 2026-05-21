@@ -7,6 +7,11 @@
 
 namespace raytracer::render {
 
+struct RenderDebugOptions {
+  int toneMapMode = 1;
+  int lightMode = 0;
+};
+
 class RaytraceRenderer {
 public:
   explicit RaytraceRenderer(const char *shaderPath);
@@ -15,7 +20,8 @@ public:
   RaytraceRenderer(const RaytraceRenderer &) = delete;
   RaytraceRenderer &operator=(const RaytraceRenderer &) = delete;
 
-  void updateFrame(int width, int height, const scene::CameraData &camera);
+  void updateFrame(int width, int height, const scene::CameraData &camera,
+                   RenderDebugOptions debugOptions);
   void uploadScene(const scene::Scene &scene);
   void render(int width, int height) const;
 
