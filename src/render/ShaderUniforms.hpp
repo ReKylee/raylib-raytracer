@@ -30,9 +30,9 @@ constexpr const char *planeColor = "uPlaneColor";
 
 constexpr const char *ambientIntensity = "uAmbientIntensity";
 
-constexpr const char *dirLightCount = "uDirLightCount";
-constexpr const char *dirLightDirection = "uDirLightDirection";
-constexpr const char *dirLightIntensity = "uDirLightIntensity";
+constexpr const char *directionalLightCount = "uDirectionalLightCount";
+constexpr const char *directionalLightDirection = "uDirectionalLightDirection";
+constexpr const char *directionalLightIntensity = "uDirectionalLightIntensity";
 
 constexpr const char *spotlightCount = "uSpotlightCount";
 constexpr const char *spotlightPosition = "uSpotlightPosition";
@@ -58,9 +58,9 @@ struct ShaderLocations {
 
   int ambientIntensity = -1;
 
-  int dirLightCount = -1;
-  int dirLightDirection = -1;
-  int dirLightIntensity = -1;
+  int directionalLightCount = -1;
+  int directionalLightDirection = -1;
+  int directionalLightIntensity = -1;
 
   int spotlightCount = -1;
   int spotlightPosition = -1;

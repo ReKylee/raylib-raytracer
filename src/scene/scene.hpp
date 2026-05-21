@@ -43,7 +43,7 @@ struct Spotlight {
   Vector3 position{};
   Vector3 direction{};
   Vector3 intensity{};
-  float cosine_cutoff = 0.0f;
+  float cosineCutoff = 0.0f;
 };
 
 struct CameraData {
@@ -58,7 +58,7 @@ struct Scene {
   AmbientLight ambient;
   std::vector<Sphere> spheres{};
   std::vector<Plane> planes{};
-  std::vector<DirectionalLight> dirlights{};
+  std::vector<DirectionalLight> directionalLights{};
   std::vector<Spotlight> spotlights{};
 };
 

@@ -153,19 +153,21 @@ void RaytraceRenderer::uploadCamera(int width, int height,
 void RaytraceRenderer::uploadScene(const scene::Scene &scene) {
   const std::size_t sphereCount = ClampedCount<MAX_SPHERES>(scene.spheres);
   const std::size_t planeCount = ClampedCount<MAX_PLANES>(scene.planes);
-  const std::size_t dirLightCount = ClampedCount<MAX_LIGHTS>(scene.dirlights);
+  const std::size_t directionalLightCount =
+      ClampedCount<MAX_LIGHTS>(scene.directionalLights);
   const std::size_t spotlightCount = ClampedCount<MAX_LIGHTS>(scene.spotlights);
 
   const int sphereCountGpu = static_cast<int>(sphereCount);
   const int planeCountGpu = static_cast<int>(planeCount);
-  const int dirLightCountGpu = static_cast<int>(dirLightCount);
+  const int directionalLightCountGpu = static_cast<int>(directionalLightCount);
   const int spotlightCountGpu = static_cast<int>(spotlightCount);
 
   const auto sceneUniforms = std::to_array<UniformUpload>({
       {m_locs.ambientIntensity, &scene.ambient.intensity, SHADER_UNIFORM_VEC3},
       {m_locs.sphereCount, &sphereCountGpu, SHADER_UNIFORM_INT},
       {m_locs.planeCount, &planeCountGpu, SHADER_UNIFORM_INT},
-      {m_locs.dirLightCount, &dirLightCountGpu, SHADER_UNIFORM_INT},
+      {m_locs.directionalLightCount, &directionalLightCountGpu,
+       SHADER_UNIFORM_INT},
       {m_locs.spotlightCount, &spotlightCountGpu, SHADER_UNIFORM_INT},
   });
 
@@ -198,19 +200,21 @@ void RaytraceRenderer::uploadScene(const scene::Scene &scene) {
 
   UploadUniformArrays(m_shader, planeUploads);
 
-  const auto dirLightDirection = PackArray<Vector3, MAX_LIGHTS>(
-      scene.dirlights, dirLightCount, &DirectionalLight::direction);
-  const auto dirLightIntensity = PackArray<Vector3, MAX_LIGHTS>(
-      scene.dirlights, dirLightCount, &DirectionalLight::intensity);
+  const auto directionalLightDirection = PackArray<Vector3, MAX_LIGHTS>(
+      scene.directionalLights, directionalLightCount,
+      &DirectionalLight::direction);
+  const auto directionalLightIntensity = PackArray<Vector3, MAX_LIGHTS>(
+      scene.directionalLights, directionalLightCount,
+      &DirectionalLight::intensity);
 
-  const auto dirLightUploads = std::to_array<UniformArrayUpload>({
-      {m_locs.dirLightDirection, dirLightDirection.data(), SHADER_UNIFORM_VEC3,
-       dirLightCountGpu},
-      {m_locs.dirLightIntensity, dirLightIntensity.data(), SHADER_UNIFORM_VEC3,
-       dirLightCountGpu},
+  const auto directionalLightUploads = std::to_array<UniformArrayUpload>({
+      {m_locs.directionalLightDirection, directionalLightDirection.data(),
+       SHADER_UNIFORM_VEC3, directionalLightCountGpu},
+      {m_locs.directionalLightIntensity, directionalLightIntensity.data(),
+       SHADER_UNIFORM_VEC3, directionalLightCountGpu},
   });
 
-  UploadUniformArrays(m_shader, dirLightUploads);
+  UploadUniformArrays(m_shader, directionalLightUploads);
 
   const auto spotlightPosition = PackArray<Vector3, MAX_LIGHTS>(
       scene.spotlights, spotlightCount, &Spotlight::position);

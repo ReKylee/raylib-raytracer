@@ -40,7 +40,8 @@ void LoadShaderLocations(Shader shader, ShaderLocations &locations) {
       {&ShaderLocations::sphereCount, shader_uniforms::sphereCount},
       {&ShaderLocations::planeCount, shader_uniforms::planeCount},
       {&ShaderLocations::ambientIntensity, shader_uniforms::ambientIntensity},
-      {&ShaderLocations::dirLightCount, shader_uniforms::dirLightCount},
+      {&ShaderLocations::directionalLightCount,
+       shader_uniforms::directionalLightCount},
       {&ShaderLocations::spotlightCount, shader_uniforms::spotlightCount},
   });
 
@@ -49,10 +50,10 @@ void LoadShaderLocations(Shader shader, ShaderLocations &locations) {
       {&ShaderLocations::sphereColor, shader_uniforms::sphereColor},
       {&ShaderLocations::planeData, shader_uniforms::planeData},
       {&ShaderLocations::planeColor, shader_uniforms::planeColor},
-      {&ShaderLocations::dirLightDirection,
-       shader_uniforms::dirLightDirection},
-      {&ShaderLocations::dirLightIntensity,
-       shader_uniforms::dirLightIntensity},
+      {&ShaderLocations::directionalLightDirection,
+       shader_uniforms::directionalLightDirection},
+      {&ShaderLocations::directionalLightIntensity,
+       shader_uniforms::directionalLightIntensity},
       {&ShaderLocations::spotlightPosition,
        shader_uniforms::spotlightPosition},
       {&ShaderLocations::spotlightDirectionCutoff,
@@ -111,7 +112,7 @@ Vector4 PackSpotlightDirectionCutoff(const scene::Spotlight &light) {
       light.direction.x,
       light.direction.y,
       light.direction.z,
-      light.cosine_cutoff,
+      light.cosineCutoff,
   };
 }
 

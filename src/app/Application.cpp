@@ -103,7 +103,7 @@ void Application::createTestScene() {
               },
           },
 
-      .dirlights =
+      .directionalLights =
           {
               // Warm sunlight from upper-left/front
               DirectionalLight{
@@ -119,7 +119,7 @@ void Application::createTestScene() {
                   .position = {2.8f, 3.5f, 3.2f},
                   .direction = {-0.55f, -0.75f, -0.55f},
                   .intensity = {2.8f, 3.1f, 3.8f},
-                  .cosine_cutoff =
+                  .cosineCutoff =
                       static_cast<float>(std::cos(22.0f * DEG2RAD)),
               },
 
@@ -128,7 +128,7 @@ void Application::createTestScene() {
                   .position = {-3.0f, 2.2f, 1.0f},
                   .direction = {0.7f, -0.45f, -0.25f},
                   .intensity = {1.4f, 0.95f, 0.65f},
-                  .cosine_cutoff =
+                  .cosineCutoff =
                       static_cast<float>(std::cos(35.0f * DEG2RAD)),
               },
           },
