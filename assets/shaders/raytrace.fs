@@ -43,6 +43,9 @@ uniform vec3 uSpotlightIntensity[MAX_LIGHTS];
 #define DEFAULT_SPHERE_REFLECTIVITY 0.25
 #define DEFAULT_PLANE_REFLECTIVITY 0.0
 #define MIN_LIGHT_DISTANCE 0.1
+#define SPOTLIGHT_SOFT_EDGE 0.08
+#define EXPOSURE 1.0
+#define DISPLAY_GAMMA 2.2
 #define AA_SAMPLE_OFFSET 0.25
 #define AA_SAMPLE_COUNT 4.0
 
@@ -82,6 +85,10 @@ HitRecord emptyHit() {
 void setFaceNormal(Ray ray, vec3 outwardNormal, inout HitRecord record) {
     record.frontFace = dot(ray.direction, outwardNormal) < 0.0;
     record.normal = record.frontFace ? outwardNormal : -outwardNormal;
+}
+
+bool isZeroVector(vec3 vector) {
+    return dot(vector, vector) <= EPSILON * EPSILON;
 }
 
 // Camera
@@ -161,14 +168,21 @@ void intersectPlane(
     float reflectivity,
     inout HitRecord closest
 ) {
+    float normalLength = length(planeNormal);
+
+    if (normalLength <= EPSILON) {
+        return;
+    }
+
     vec3 normal = normalize(planeNormal);
+    float offset = planeOffset / normalLength;
     float denominator = dot(normal, ray.direction);
 
     if (abs(denominator) < EPSILON) {
         return;
     }
 
-    float distance = -(dot(normal, ray.origin) + planeOffset) / denominator;
+    float distance = -(dot(normal, ray.origin) + offset) / denominator;
 
     if (distance <= EPSILON || distance >= closest.distance) {
         return;
@@ -219,23 +233,33 @@ HitRecord intersectScene(Ray ray) {
 
 // Shadows
 
-Ray makeShadowRay(vec3 position, vec3 directionToLight) {
-    return Ray(position + directionToLight * EPSILON * 2.0, directionToLight);
+Ray makeShadowRay(HitRecord record, vec3 directionToLight) {
+    vec3 offsetNormal = dot(record.normal, directionToLight) < 0.0
+        ? -record.normal : record.normal;
+
+    return Ray(record.position + offsetNormal * EPSILON * 2.0, directionToLight);
 }
 
-float directionalLightVisibility(vec3 position, vec3 directionToLight) {
-    HitRecord shadowHit = intersectScene(makeShadowRay(position, directionToLight));
+float directionalLightVisibility(HitRecord record, vec3 directionToLight) {
+    HitRecord shadowHit = intersectScene(makeShadowRay(record, directionToLight));
     return shadowHit.hit ? 0.0 : 1.0;
 }
 
-float spotlightVisibility(vec3 position, vec3 directionToLight, float distanceToLight) {
-    HitRecord shadowHit = intersectScene(makeShadowRay(position, directionToLight));
+float spotlightVisibility(HitRecord record, vec3 directionToLight, float distanceToLight) {
+    HitRecord shadowHit = intersectScene(makeShadowRay(record, directionToLight));
     return shadowHit.hit && shadowHit.distance < distanceToLight ? 0.0 : 1.0;
 }
 
 float spotlightAttenuation(float distanceToLight) {
     float safeDistance = max(distanceToLight, MIN_LIGHT_DISTANCE);
     return 1.0 / (safeDistance * safeDistance);
+}
+
+float spotlightConeVisibility(float coneAngleCosine, float cutoffCosine) {
+    float outerCutoff = clamp(cutoffCosine, -1.0, 1.0);
+    float innerCutoff = min(outerCutoff + SPOTLIGHT_SOFT_EDGE, 1.0);
+
+    return smoothstep(outerCutoff, innerCutoff, coneAngleCosine);
 }
 
 // Lighting
@@ -251,9 +275,9 @@ vec3 phongLightContribution(
 
     float diffuseStrength = max(dot(record.normal, directionToLight), 0.0);
     vec3 reflectedLightDirection = reflect(-directionToLight, record.normal);
-    float specularStrength = pow(max(dot(reflectedLightDirection, directionToCamera), 0.0), record.shininess);
-
-    specularStrength *= step(0.0, diffuseStrength);
+    float specularBase = max(dot(reflectedLightDirection, directionToCamera), 0.0);
+    float specularStrength = diffuseStrength > 0.0 && record.shininess > 0.0
+        ? pow(specularBase, record.shininess) : 0.0;
 
     return shadowVisibility * lightIntensity *
         (record.color * diffuseStrength + specularColor * specularStrength);
@@ -264,8 +288,14 @@ vec3 shadeHit(Ray ray, HitRecord record) {
     vec3 directionToCamera = normalize(-ray.direction);
 
     for (int lightIndex = 0; lightIndex < uDirectionalLightCount; lightIndex++) {
-        vec3 directionToLight = normalize(-uDirectionalLightDirection[lightIndex]);
-        float shadowVisibility = directionalLightVisibility(record.position, directionToLight);
+        vec3 lightDirection = uDirectionalLightDirection[lightIndex];
+
+        if (isZeroVector(lightDirection)) {
+            continue;
+        }
+
+        vec3 directionToLight = normalize(-lightDirection);
+        float shadowVisibility = directionalLightVisibility(record, directionToLight);
 
         shadedColor += phongLightContribution(
                 record,
@@ -279,13 +309,30 @@ vec3 shadeHit(Ray ray, HitRecord record) {
     for (int lightIndex = 0; lightIndex < uSpotlightCount; lightIndex++) {
         vec3 directionFromLight = record.position - uSpotlightPosition[lightIndex];
         float distanceToLight = length(directionFromLight);
-        vec3 directionToLight = -directionFromLight / max(distanceToLight, EPSILON);
 
-        vec3 spotlightDirection = normalize(uSpotlightDirectionCutoff[lightIndex].xyz);
+        if (distanceToLight <= EPSILON) {
+            continue;
+        }
+
+        vec3 directionFromLightUnit = directionFromLight / distanceToLight;
+        vec3 directionToLight = -directionFromLightUnit;
+        vec3 spotlightDirectionRaw = uSpotlightDirectionCutoff[lightIndex].xyz;
+
+        if (isZeroVector(spotlightDirectionRaw)) {
+            continue;
+        }
+
+        vec3 spotlightDirection = normalize(spotlightDirectionRaw);
         float spotlightCutoff = uSpotlightDirectionCutoff[lightIndex].w;
-        float coneVisibility = step(spotlightCutoff, dot(spotlightDirection, normalize(directionFromLight)));
-        float shadowVisibility = spotlightVisibility(record.position, directionToLight, distanceToLight);
-        vec3 lightIntensity = uSpotlightIntensity[lightIndex] * coneVisibility * spotlightAttenuation(distanceToLight);
+        float coneAngleCosine = dot(spotlightDirection, directionFromLightUnit);
+        float coneVisibility = spotlightConeVisibility(
+                coneAngleCosine,
+                spotlightCutoff
+            );
+        float shadowVisibility = spotlightVisibility(record, directionToLight, distanceToLight);
+        vec3 lightIntensity = uSpotlightIntensity[lightIndex] *
+                coneVisibility *
+                spotlightAttenuation(distanceToLight);
 
         shadedColor += phongLightContribution(
                 record,
@@ -341,6 +388,22 @@ vec3 raytrace(Ray initialRay) {
     return accumulatedColor;
 }
 
+// Post-processing
+
+vec3 acesToneMap(vec3 color) {
+    const float a = 2.51;
+    const float b = 0.03;
+    const float c = 2.43;
+    const float d = 0.59;
+    const float e = 0.14;
+
+    return clamp((color * (a * color + b)) / (color * (c * color + d) + e), 0.0, 1.0);
+}
+
+vec3 gammaCorrect(vec3 color) {
+    return pow(max(color, vec3(0.0)), vec3(1.0 / DISPLAY_GAMMA));
+}
+
 // Entry point
 
 void main() {
@@ -352,5 +415,5 @@ void main() {
     color += raytrace(makeCameraRay(vec2(AA_SAMPLE_OFFSET, AA_SAMPLE_OFFSET)));
     color /= AA_SAMPLE_COUNT;
 
-    finalColor = vec4(color, 1.0);
+    finalColor = vec4(gammaCorrect(acesToneMap(color * EXPOSURE)), 1.0);
 }

@@ -44,93 +44,154 @@ void Application::createTestScene() {
   m_scene = Scene{
       .camera =
           {
-              .position = {0.0f, 0.8f, 5.0f},
-              .forward = {0.0f, -0.08f, -1.0f},
+              .position = {0.0f, 0.75f, 8.4f},
+              .forward = {0.0f, -0.1f, -1.0f},
               .up = {0.0f, 1.0f, 0.0f},
-              .fovY = 55.0f,
+              .fovY = 50.0f,
           },
 
-      .ambient = {.intensity = {0.06f, 0.06f, 0.075f}},
+      .ambient = {.intensity = {0.035f, 0.04f, 0.055f}},
 
       .spheres =
           {
-              // Main center sphere
+              // Center: glossy reflections, strong highlights, and self-shadowing.
               Sphere{
                   .position = {0.0f, 0.0f, 0.0f},
                   .radius = 1.0f,
-                  .color = {1.0f, 0.22f, 0.18f},
-                  .shininess = 48.0f,
-              },
-
-              // Left small cool sphere
-              Sphere{
-                  .position = {-1.65f, -0.35f, -0.85f},
-                  .radius = 0.65f,
-                  .color = {0.12f, 0.55f, 1.0f},
+                  .color = {1.0f, 0.1f, 0.07f},
                   .shininess = 96.0f,
               },
 
-              // Right green sphere
+              // Left bay: hard directional shadows and saturated diffuse color.
               Sphere{
-                  .position = {1.55f, -0.25f, -1.1f},
-                  .radius = 0.75f,
-                  .color = {0.25f, 1.0f, 0.38f},
-                  .shininess = 32.0f,
+                  .position = {-3.2f, -0.35f, -0.55f},
+                  .radius = 0.65f,
+                  .color = {0.05f, 0.52f, 1.0f},
+                  .shininess = 72.0f,
               },
 
-              // Small yellow sphere in front, good for testing depth sorting
+              // Right bay: warm spotlight and clear ground shadow.
               Sphere{
-                  .position = {-0.55f, -0.72f, 1.35f},
+                  .position = {3.25f, -0.28f, -0.75f},
+                  .radius = 0.72f,
+                  .color = {0.18f, 1.0f, 0.28f},
+                  .shininess = 28.0f,
+              },
+
+              // Foreground: tiny geometry for antialiasing and depth ordering.
+              Sphere{
+                  .position = {-0.55f, -0.73f, 2.25f},
                   .radius = 0.28f,
-                  .color = {1.0f, 0.82f, 0.18f},
+                  .color = {1.0f, 0.86f, 0.05f},
                   .shininess = 16.0f,
               },
 
-              // Small purple sphere farther back
+              // Back center: visible in reflections and second directional light.
               Sphere{
-                  .position = {0.85f, 0.55f, -1.75f},
+                  .position = {0.9f, 0.68f, -2.35f},
+                  .radius = 0.42f,
+                  .color = {0.78f, 0.22f, 1.0f},
+                  .shininess = 160.0f,
+              },
+
+              // Left rear: bright specular reference.
+              Sphere{
+                  .position = {-2.25f, -0.72f, -2.15f},
+                  .radius = 0.3f,
+                  .color = {0.95f, 0.95f, 0.9f},
+                  .shininess = 220.0f,
+              },
+
+              // Right foreground: overlap and reflection test.
+              Sphere{
+                  .position = {1.85f, -0.62f, 1.45f},
                   .radius = 0.38f,
-                  .color = {0.75f, 0.35f, 1.0f},
-                  .shininess = 128.0f,
+                  .color = {1.0f, 0.38f, 0.88f},
+                  .shininess = 120.0f,
+              },
+
+              // Far wall marker: makes spotlight cone edges easier to see.
+              Sphere{
+                  .position = {-3.65f, 0.18f, -3.25f},
+                  .radius = 0.55f,
+                  .color = {0.12f, 1.0f, 0.82f},
+                  .shininess = 48.0f,
               },
           },
 
       .planes =
           {
-              // Ground plane.
+              // Floor: non-unit normal tests plane normalization and checker UVs.
               Plane{
-                  .normal = {0.0f, -0.5f, -1.0f},
-                  .offset = -3.5f,
-                  .color = {0.72f, 0.72f, 0.68f},
+                  .normal = {0.0f, 2.0f, 0.0f},
+                  .offset = 2.0f,
+                  .color = {0.8f, 0.8f, 0.74f},
                   .shininess = 12.0f,
+              },
+
+              // Back wall catches both spotlight cones and reflected objects.
+              Plane{
+                  .normal = {0.0f, 0.0f, 1.0f},
+                  .offset = 4.2f,
+                  .color = {0.55f, 0.6f, 0.7f},
+                  .shininess = 18.0f,
+              },
+
+              // Side walls make the gallery read as a small room.
+              Plane{
+                  .normal = {1.0f, 0.0f, 0.0f},
+                  .offset = 5.2f,
+                  .color = {0.55f, 0.58f, 0.64f},
+                  .shininess = 10.0f,
+              },
+
+              Plane{
+                  .normal = {-1.0f, 0.0f, 0.0f},
+                  .offset = 5.2f,
+                  .color = {0.64f, 0.58f, 0.55f},
+                  .shininess = 10.0f,
+              },
+
+              // Ceiling gives upward views and reflections a bounded surface.
+              Plane{
+                  .normal = {0.0f, -1.0f, 0.0f},
+                  .offset = 3.2f,
+                  .color = {0.46f, 0.48f, 0.52f},
+                  .shininess = 8.0f,
               },
           },
 
       .directionalLights =
           {
-              // Warm sunlight from upper-left/front
+              // Warm key direction: hard shadows across the whole room.
               DirectionalLight{
-                  .direction = {-0.45f, -0.9f, -0.35f},
-                  .intensity = {0.75f, 0.68f, 0.55f},
+                  .direction = {0.45f, -0.85f, -0.25f},
+                  .intensity = {0.58f, 0.49f, 0.36f},
+              },
+
+              // Cool rim direction: verifies multiple directional lights.
+              DirectionalLight{
+                  .direction = {-0.65f, -0.35f, 0.52f},
+                  .intensity = {0.18f, 0.23f, 0.35f},
               },
           },
 
       .spotlights =
           {
-              // Cool-ish spotlight from camera/right side
+              // Cool narrow cone: visible soft edge on the left floor/wall.
               Spotlight{
-                  .position = {2.8f, 3.5f, 3.2f},
-                  .direction = {-0.55f, -0.75f, -0.55f},
-                  .intensity = {2.8f, 3.1f, 3.8f},
-                  .cosineCutoff = static_cast<float>(std::cos(22.0f * DEG2RAD)),
+                  .position = {-3.8f, 2.7f, 2.5f},
+                  .direction = {0.25f, -0.68f, -0.7f},
+                  .intensity = {3.0f, 4.1f, 6.6f},
+                  .cosineCutoff = static_cast<float>(std::cos(20.0f * DEG2RAD)),
               },
 
-              // Soft warm fill from left/back
+              // Warm wider cone: overlaps the center and right bay.
               Spotlight{
-                  .position = {-3.0f, 2.2f, 1.0f},
-                  .direction = {0.7f, -0.45f, -0.25f},
-                  .intensity = {1.4f, 0.95f, 0.65f},
-                  .cosineCutoff = static_cast<float>(std::cos(35.0f * DEG2RAD)),
+                  .position = {3.8f, 2.35f, 2.1f},
+                  .direction = {-0.62f, -0.55f, -0.56f},
+                  .intensity = {4.8f, 2.2f, 0.85f},
+                  .cosineCutoff = static_cast<float>(std::cos(32.0f * DEG2RAD)),
               },
           },
   };
