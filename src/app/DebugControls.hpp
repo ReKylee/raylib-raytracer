@@ -19,6 +19,7 @@ struct State {
   bool overlayVisible = true;
   ToneMapMode toneMapMode = ToneMapMode::Aces;
   LightMode lightMode = LightMode::All;
+  float gamma = 2.2f;
 };
 
 void Update(State &state);

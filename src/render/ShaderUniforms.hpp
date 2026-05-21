@@ -31,6 +31,7 @@ constexpr const char *planeData = "uPlaneData";
 constexpr const char *planeColor = "uPlaneColor";
 
 constexpr const char *ambientIntensity = "uAmbientIntensity";
+constexpr const char *gamma = "uGamma";
 
 constexpr const char *directionalLightCount = "uDirectionalLightCount";
 constexpr const char *directionalLightDirection = "uDirectionalLightDirection";
@@ -48,6 +49,7 @@ struct ShaderLocations {
   int time = -1;
   int toneMapMode = -1;
   int lightMode = -1;
+  int gamma = -1;
 
   int cameraToWorld = -1;
   int cameraViewportScale = -1;
@@ -103,10 +105,9 @@ inline void UploadUniforms(Shader shader,
 inline void UploadUniformArrays(Shader shader,
                                 std::span<const UniformArrayUpload> uploads) {
   auto activeUploads =
-      uploads | std::views::filter(
-                    [](const UniformArrayUpload &upload) {
-                      return upload.count > 0;
-                    });
+      uploads | std::views::filter([](const UniformArrayUpload &upload) {
+        return upload.count > 0;
+      });
 
   std::ranges::for_each(
       activeUploads, [shader](const UniformArrayUpload &upload) {
@@ -120,11 +121,10 @@ std::size_t ClampedCount(const Range &range) {
   return std::min(std::ranges::size(range), MaxCount);
 }
 
-template <typename Packed, std::size_t Capacity, std::ranges::random_access_range SourceRange,
-          typename Projection>
-std::array<Packed, Capacity> PackArray(const SourceRange &source,
-                                       std::size_t count,
-                                       Projection projection) {
+template <typename Packed, std::size_t Capacity,
+          std::ranges::random_access_range SourceRange, typename Projection>
+std::array<Packed, Capacity>
+PackArray(const SourceRange &source, std::size_t count, Projection projection) {
   std::array<Packed, Capacity> packed{};
 
   std::ranges::transform(source | std::views::take(count), packed.begin(),

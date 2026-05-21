@@ -10,6 +10,7 @@ namespace raytracer::render {
 struct RenderDebugOptions {
   int toneMapMode = 1;
   int lightMode = 0;
+  float gamma = 1.0;
 };
 
 class RaytraceRenderer {

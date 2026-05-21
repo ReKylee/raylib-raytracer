@@ -133,6 +133,7 @@ void RaytraceRenderer::updateFrame(int width, int height,
       {m_locs.time, &time, SHADER_UNIFORM_FLOAT},
       {m_locs.toneMapMode, &debugOptions.toneMapMode, SHADER_UNIFORM_INT},
       {m_locs.lightMode, &debugOptions.lightMode, SHADER_UNIFORM_INT},
+      {m_locs.gamma, &debugOptions.gamma, SHADER_UNIFORM_FLOAT},
   });
 
   UploadUniforms(m_shader, frameUniforms);

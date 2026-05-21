@@ -15,6 +15,7 @@ uniform mat4 uCameraToWorld;
 uniform vec2 uCameraViewportScale;
 
 uniform vec3 uAmbientIntensity;
+uniform float uGamma;
 
 uniform int uSphereCount;
 uniform vec4 uSphereData[MAX_SPHERES]; // xyz position, w radius
@@ -47,7 +48,6 @@ uniform vec3 uSpotlightIntensity[MAX_LIGHTS];
 #define MIN_LIGHT_DISTANCE 0.1
 #define SPOTLIGHT_SOFT_EDGE 0.08
 #define EXPOSURE 1.0
-#define DISPLAY_GAMMA 1.5
 #define TONE_MAP_RAW 0
 #define TONE_MAP_ACES 1
 #define LIGHT_MODE_ALL 0
@@ -412,7 +412,7 @@ vec3 acesToneMap(vec3 v) {
 }
 
 vec3 gammaCorrect(vec3 color) {
-    return pow(max(color, vec3(0.0)), vec3(1.0 / DISPLAY_GAMMA));
+    return pow(max(color, vec3(0.0)), vec3(1.0 / uGamma));
 }
 
 vec3 displayColor(vec3 color) {

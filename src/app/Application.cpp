@@ -17,7 +17,7 @@ Application::Application(int width, int height, std::string title)
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
   InitWindow(m_width, m_height, m_title.c_str());
-  SetExitKey(KEY_F12);
+  SetExitKey(KEY_F10);
   SetTargetFPS(60);
 
   m_renderer.emplace("assets/shaders/raytrace.fs");
