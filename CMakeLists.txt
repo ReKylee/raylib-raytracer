@@ -89,14 +89,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 add_custom_target(${PROJECT_NAME}_assets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-        "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets"
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
+        "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets/shaders"
     COMMENT "Copying assets to runtime directory"
 )
 
 add_custom_target(${PROJECT_NAME}_scenes ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets/Scenes"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Scenes"
         "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Scenes"
     COMMENT "Copying scenes to runtime directory"
 )
