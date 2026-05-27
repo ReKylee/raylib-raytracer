@@ -1,8 +1,8 @@
 #pragma once
 
 #include "app/DebugControls.hpp"
+#include "app/SceneLibrary.hpp"
 #include "render/RaytraceRenderer.hpp"
-#include "scene/scene.hpp"
 
 #include <optional>
 #include <string>
@@ -25,9 +25,6 @@ public:
   void run();
 
 private:
-  /// Builds the hard-coded validation scene used by the assignment.
-  void createTestScene();
-
   /// Polls input and uploads per-frame render state.
   void update();
 
@@ -40,7 +37,7 @@ private:
   std::string m_title;
 
   std::optional<render::RaytraceRenderer> m_renderer;
-  scene::Scene m_scene{};
+  std::optional<SceneLibrary> m_sceneLibrary;
   Vector4 m_cameraOrientation{};
   debug::State m_debugState{};
 };

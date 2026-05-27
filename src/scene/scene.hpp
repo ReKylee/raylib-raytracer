@@ -2,7 +2,6 @@
 
 #include "raylib.h"
 
-#include <variant>
 #include <vector>
 
 namespace raytracer::scene {
@@ -45,9 +44,6 @@ struct Plane {
   /// Specular exponent. Higher values create tighter highlights.
   float shininess = 0.0f;
 };
-
-// Temporary parser representation before objects are split into render arrays.
-using SceneObject = std::variant<Sphere, Plane>;
 
 /// Ambient light applied uniformly to every visible surface.
 struct AmbientLight {

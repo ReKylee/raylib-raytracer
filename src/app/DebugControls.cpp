@@ -1,5 +1,8 @@
 #include "app/DebugControls.hpp"
 
+#include <algorithm>
+#include <string>
+
 namespace raytracer::app::debug {
 namespace {
 
@@ -16,6 +19,11 @@ constexpr int BASE_FPS_LEFT = 10;
 constexpr int BASE_FPS_TOP = 10;
 constexpr int FPS_BACKING_WIDTH = 88;
 constexpr int FPS_BACKING_HEIGHT = 26;
+
+constexpr int ERROR_FONT_SIZE = 18;
+constexpr int ERROR_LINE_HEIGHT = ERROR_FONT_SIZE + 8;
+constexpr int ERROR_PADDING = 14;
+constexpr int ERROR_MARGIN = 14;
 
 constexpr int BASE_HEADER_HEIGHT = 30;
 constexpr int BASE_LINE_HEIGHT = 28;
@@ -53,6 +61,10 @@ constexpr Color LABEL_COLOR{150, 160, 175, 255};
 constexpr Color KEY_COLOR{125, 180, 255, 255};
 constexpr Color HELP_COLOR{180, 185, 195, 255};
 constexpr Color VALUE_COLOR{235, 238, 245, 255};
+constexpr Color ERROR_BG_COLOR{60, 12, 12, 235};
+constexpr Color ERROR_BORDER_COLOR{220, 80, 80, 230};
+constexpr Color ERROR_TITLE_COLOR{255, 200, 200, 255};
+constexpr Color ERROR_TEXT_COLOR{255, 235, 235, 255};
 
 float UiScale(int screenHeight) {
   const auto clamp = [](float value, float minValue, float maxValue) {
@@ -225,6 +237,34 @@ void DrawOverlay(const State &state) {
   drawRow(SYSTEM_ROW, "System",
           compact ? "F1  Esc  F10" : "F1 overlay  Esc cursor  F10 exit",
           nullptr, HELP_COLOR);
+}
+
+void DrawSceneLoadError(std::string_view sceneName, std::string_view error) {
+  if (error.empty()) {
+    return;
+  }
+
+  const std::string title = "Failed to load: " + std::string{sceneName};
+  const std::string message{error};
+
+  const int textWidth =
+      std::max(MeasureText(title.c_str(), ERROR_FONT_SIZE),
+               MeasureText(message.c_str(), ERROR_FONT_SIZE));
+  const int bannerWidth =
+      std::min(textWidth + ERROR_PADDING * 2,
+               GetScreenWidth() - ERROR_MARGIN * 2);
+  const int bannerHeight = ERROR_PADDING * 2 + ERROR_LINE_HEIGHT * 2;
+  const int bannerX = ERROR_MARGIN;
+  const int bannerY = GetScreenHeight() - ERROR_MARGIN - bannerHeight;
+
+  DrawRectangle(bannerX, bannerY, bannerWidth, bannerHeight, ERROR_BG_COLOR);
+  DrawRectangleLines(bannerX, bannerY, bannerWidth, bannerHeight,
+                     ERROR_BORDER_COLOR);
+  DrawText(title.c_str(), bannerX + ERROR_PADDING, bannerY + ERROR_PADDING,
+           ERROR_FONT_SIZE, ERROR_TITLE_COLOR);
+  DrawText(message.c_str(), bannerX + ERROR_PADDING,
+           bannerY + ERROR_PADDING + ERROR_LINE_HEIGHT, ERROR_FONT_SIZE,
+           ERROR_TEXT_COLOR);
 }
 
 render::RenderDebugOptions ToRenderOptions(const State &state) {

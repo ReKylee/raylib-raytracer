@@ -84,7 +84,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "Private Headers" FIL
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/include" PREFIX "Public Headers" FILES ${PUBLIC_HEADERS})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
 )
 
 add_custom_target(${PROJECT_NAME}_assets ALL
@@ -94,7 +94,14 @@ add_custom_target(${PROJECT_NAME}_assets ALL
     COMMENT "Copying assets to runtime directory"
 )
 
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_assets)
+add_custom_target(${PROJECT_NAME}_scenes ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/Scenes"
+        "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Scenes"
+    COMMENT "Copying scenes to runtime directory"
+)
+
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_assets ${PROJECT_NAME}_scenes)
 
 # Web / Emscripten config
 if (PLATFORM STREQUAL "Web")

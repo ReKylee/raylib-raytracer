@@ -2,6 +2,8 @@
 
 #include "render/RaytraceRenderer.hpp"
 
+#include <string_view>
+
 namespace raytracer::app::debug {
 
 /// Default display gamma used by the debug controls.
@@ -40,6 +42,9 @@ void Update(State &state);
 
 /// Draws the debug overlay when it is enabled.
 void DrawOverlay(const State &state);
+
+/// Draws the last scene-load error, if any.
+void DrawSceneLoadError(std::string_view sceneName, std::string_view error);
 
 /// Converts application debug state to the renderer-facing uniform payload.
 render::RenderDebugOptions ToRenderOptions(const State &state);
