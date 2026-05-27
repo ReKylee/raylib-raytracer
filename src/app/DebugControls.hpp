@@ -41,7 +41,7 @@ struct State {
 void Update(State &state);
 
 /// Draws the debug overlay when it is enabled.
-void DrawOverlay(const State &state);
+void DrawOverlay(const State &state, std::string_view sceneName);
 
 /// Draws the last scene-load error, if any.
 void DrawSceneLoadError(std::string_view sceneName, std::string_view error);

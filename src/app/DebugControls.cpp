@@ -17,8 +17,12 @@ constexpr int BASE_PANEL_PADDING = 14;
 
 constexpr int BASE_FPS_LEFT = 10;
 constexpr int BASE_FPS_TOP = 10;
-constexpr int FPS_BACKING_WIDTH = 88;
-constexpr int FPS_BACKING_HEIGHT = 26;
+constexpr int FPS_BACKING_WIDTH = 112;
+constexpr int FPS_BACKING_HEIGHT = 30;
+constexpr int FPS_LABEL_OFFSET_X = 10;
+constexpr int FPS_VALUE_OFFSET_X = 52;
+constexpr int FPS_TEXT_OFFSET_Y = 7;
+constexpr int FPS_FONT_SIZE = 16;
 
 constexpr int ERROR_FONT_SIZE = 18;
 constexpr int ERROR_LINE_HEIGHT = ERROR_FONT_SIZE + 8;
@@ -29,7 +33,7 @@ constexpr int BASE_HEADER_HEIGHT = 30;
 constexpr int BASE_LINE_HEIGHT = 28;
 constexpr int BASE_FONT_SIZE = 18;
 constexpr int BASE_TITLE_FONT_SIZE = 18;
-constexpr int BODY_LINES = 5;
+constexpr int BODY_LINES = 6;
 
 constexpr float REFERENCE_SCREEN_HEIGHT = 1080.0f;
 constexpr float MIN_UI_SCALE = 0.9f;
@@ -48,8 +52,9 @@ constexpr int TITLE_TEXT_TOP = 6;
 constexpr int TONE_MAP_ROW = 0;
 constexpr int LIGHTS_ROW = 1;
 constexpr int GAMMA_ROW = 2;
-constexpr int CAMERA_ROW = 3;
-constexpr int SYSTEM_ROW = 4;
+constexpr int SCENE_ROW = 3;
+constexpr int CAMERA_ROW = 4;
+constexpr int SYSTEM_ROW = 5;
 
 constexpr Color BG_COLOR{6, 8, 12, 220};
 constexpr Color HEADER_COLOR{28, 34, 48, 240};
@@ -61,6 +66,9 @@ constexpr Color LABEL_COLOR{150, 160, 175, 255};
 constexpr Color KEY_COLOR{125, 180, 255, 255};
 constexpr Color HELP_COLOR{180, 185, 195, 255};
 constexpr Color VALUE_COLOR{235, 238, 245, 255};
+constexpr Color FPS_GOOD_COLOR{130, 230, 160, 255};
+constexpr Color FPS_WARN_COLOR{255, 210, 110, 255};
+constexpr Color FPS_BAD_COLOR{255, 130, 130, 255};
 constexpr Color ERROR_BG_COLOR{60, 12, 12, 235};
 constexpr Color ERROR_BORDER_COLOR{220, 80, 80, 230};
 constexpr Color ERROR_TITLE_COLOR{255, 200, 200, 255};
@@ -126,10 +134,19 @@ void DrawFpsCounter(float uiScale) {
   const int y = Scale(BASE_FPS_TOP, uiScale);
   const int width = Scale(FPS_BACKING_WIDTH, uiScale);
   const int height = Scale(FPS_BACKING_HEIGHT, uiScale);
+  const int fontSize = Scale(FPS_FONT_SIZE, uiScale);
+  const int textY = y + Scale(FPS_TEXT_OFFSET_Y, uiScale);
+
+  const int fps = GetFPS();
+  const Color valueColor =
+      fps >= 55 ? FPS_GOOD_COLOR : fps >= 30 ? FPS_WARN_COLOR : FPS_BAD_COLOR;
 
   DrawRectangle(x, y, width, height, BG_COLOR);
   DrawRectangleLines(x, y, width, height, BORDER_COLOR);
-  DrawFPS(x + 5, y + 5);
+  DrawText("FPS", x + Scale(FPS_LABEL_OFFSET_X, uiScale), textY, fontSize,
+           LABEL_COLOR);
+  DrawText(TextFormat("%03d", fps), x + Scale(FPS_VALUE_OFFSET_X, uiScale),
+           textY, fontSize, valueColor);
 }
 
 } // namespace
@@ -158,7 +175,7 @@ void Update(State &state) {
   }
 }
 
-void DrawOverlay(const State &state) {
+void DrawOverlay(const State &state, std::string_view sceneName) {
   const int screenWidth = GetScreenWidth();
   const int screenHeight = GetScreenHeight();
   const float uiScale = UiScale(screenHeight);
@@ -226,9 +243,12 @@ void DrawOverlay(const State &state) {
   DrawText("DEBUG", labelX, panelY + Scale(TITLE_TEXT_TOP, uiScale),
            titleFontSize, TITLE_COLOR);
 
+  const std::string sceneValue{sceneName};
+
   drawRow(TONE_MAP_ROW, "Tone map", ToneMapModeName(state.toneMapMode), "[T]");
   drawRow(LIGHTS_ROW, "Lights", LightModeName(state.lightMode), "[L]");
   drawRow(GAMMA_ROW, "Gamma", TextFormat("%.1f", state.gamma), "[+/-]");
+  drawRow(SCENE_ROW, "Scene", sceneValue.c_str(), "[Space]");
 
   drawRow(CAMERA_ROW, "Camera",
           compact ? "WASD + mouse" : "Mouse + WASD, Q/E, Shift", nullptr,

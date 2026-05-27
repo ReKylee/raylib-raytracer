@@ -75,7 +75,7 @@ void Application::render() {
 
   m_renderer->render(m_width, m_height);
 
-  debug::DrawOverlay(m_debugState);
+  debug::DrawOverlay(m_debugState, m_sceneLibrary->currentSceneName());
   debug::DrawSceneLoadError(m_sceneLibrary->currentSceneName(),
                             m_sceneLibrary->loadError());
 
