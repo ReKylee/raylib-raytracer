@@ -1,54 +1,50 @@
 #include "app/DebugControls.hpp"
+
+namespace raytracer::app::debug {
 namespace {
 
-const char *ToneMapModeName(raytracer::app::debug::ToneMapMode mode) {
+const char *ToneMapModeName(ToneMapMode mode) {
   switch (mode) {
-  case raytracer::app::debug::ToneMapMode::Raw:
+  case ToneMapMode::Raw:
     return "Raw";
-  case raytracer::app::debug::ToneMapMode::Aces:
+  case ToneMapMode::Aces:
     return "ACES";
   }
 
   return "Unknown";
 }
 
-const char *LightModeName(raytracer::app::debug::LightMode mode) {
+const char *LightModeName(LightMode mode) {
   switch (mode) {
-  case raytracer::app::debug::LightMode::All:
+  case LightMode::All:
     return "All lights";
-  case raytracer::app::debug::LightMode::DirectionalOnly:
+  case LightMode::DirectionalOnly:
     return "Directional only";
-  case raytracer::app::debug::LightMode::SpotlightsOnly:
+  case LightMode::SpotlightsOnly:
     return "Spotlights only";
   }
 
   return "Unknown";
 }
 
-raytracer::app::debug::ToneMapMode
-NextToneMapMode(raytracer::app::debug::ToneMapMode mode) {
-  return mode == raytracer::app::debug::ToneMapMode::Raw
-             ? raytracer::app::debug::ToneMapMode::Aces
-             : raytracer::app::debug::ToneMapMode::Raw;
+ToneMapMode NextToneMapMode(ToneMapMode mode) {
+  return mode == ToneMapMode::Raw ? ToneMapMode::Aces : ToneMapMode::Raw;
 }
 
-raytracer::app::debug::LightMode
-NextLightMode(raytracer::app::debug::LightMode mode) {
+LightMode NextLightMode(LightMode mode) {
   switch (mode) {
-  case raytracer::app::debug::LightMode::All:
-    return raytracer::app::debug::LightMode::DirectionalOnly;
-  case raytracer::app::debug::LightMode::DirectionalOnly:
-    return raytracer::app::debug::LightMode::SpotlightsOnly;
-  case raytracer::app::debug::LightMode::SpotlightsOnly:
-    return raytracer::app::debug::LightMode::All;
+  case LightMode::All:
+    return LightMode::DirectionalOnly;
+  case LightMode::DirectionalOnly:
+    return LightMode::SpotlightsOnly;
+  case LightMode::SpotlightsOnly:
+    return LightMode::All;
   }
 
-  return raytracer::app::debug::LightMode::All;
+  return LightMode::All;
 }
 
 } // namespace
-
-namespace raytracer::app::debug {
 
 void Update(State &state) {
   using std::max;
@@ -81,6 +77,8 @@ void DrawOverlay(const State &state) {
     return;
   }
 
+  // Base dimensions are authored for 1080p and scaled within a narrow range so
+  // the overlay remains readable without taking over small windows.
   constexpr int BASE_PANEL_MARGIN = 14;
   constexpr int BASE_PANEL_TOP = 40;
   constexpr int BASE_PANEL_WIDTH = 500;
@@ -124,6 +122,8 @@ void DrawOverlay(const State &state) {
 
   const bool compact = panelWidth < s(430);
 
+  // Column positions collapse on narrow windows while preserving the same row
+  // layout and shortcut alignment.
   const int labelX = panelX + padding;
   const int valueX = labelX + (compact ? s(92) : s(120));
   const int keyX = panelX + panelWidth - (compact ? s(70) : s(86));

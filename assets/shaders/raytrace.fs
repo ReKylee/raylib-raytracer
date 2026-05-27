@@ -58,11 +58,13 @@ uniform vec3 uSpotlightIntensity[MAX_LIGHTS];
 
 // Types
 
+// Ray represented in world space.
 struct Ray {
     vec3 origin;
     vec3 direction;
 };
 
+// Closest-hit payload shared by intersection, shading, and reflection code.
 struct HitRecord {
     bool hit;
     float distance;
@@ -76,6 +78,7 @@ struct HitRecord {
 
 // Hit helpers
 
+// Creates a miss record with a distance larger than any expected scene hit.
 HitRecord emptyHit() {
     HitRecord record;
     record.hit = false;
@@ -89,6 +92,7 @@ HitRecord emptyHit() {
     return record;
 }
 
+// Orients the geometric normal against the incoming ray for stable shading.
 void setFaceNormal(Ray ray, vec3 outwardNormal, inout HitRecord record) {
     record.frontFace = dot(ray.direction, outwardNormal) < 0.0;
     record.normal = record.frontFace ? outwardNormal : -outwardNormal;
@@ -100,6 +104,7 @@ bool isZeroVector(vec3 vector) {
 
 // Camera
 
+// Builds a world-space primary ray for the current fragment and AA sample.
 Ray makeCameraRay(vec2 pixelOffset) {
     vec2 fragUv = (gl_FragCoord.xy + pixelOffset) / max(iResolution, vec2(1.0));
     vec2 ndc = fragUv * 2.0 - 1.0;
@@ -113,6 +118,7 @@ Ray makeCameraRay(vec2 pixelOffset) {
 
 // Intersection
 
+// Tests one sphere and updates closest when this ray hits it first.
 void intersectSphere(
     Ray ray,
     vec3 spherePosition,
@@ -153,6 +159,8 @@ void intersectSphere(
     closest.reflectivity = reflectivity;
 }
 
+// Selects the dominant plane axes so the checker pattern is stable on walls
+// and floors without needing explicit UV coordinates.
 float checkerMultiplierAt(vec3 position, vec3 normal) {
     vec3 absNormal = abs(normal);
 
@@ -167,6 +175,7 @@ float checkerMultiplierAt(vec3 position, vec3 normal) {
     return mix(CHECKER_A, CHECKER_B, checker);
 }
 
+// Tests one implicit plane and updates closest when this ray hits it first.
 void intersectPlane(
     Ray ray,
     vec3 planeNormal,
@@ -206,6 +215,7 @@ void intersectPlane(
     closest.reflectivity = reflectivity;
 }
 
+// Finds the nearest primitive hit in the uploaded scene.
 HitRecord intersectScene(Ray ray) {
     HitRecord closest = emptyHit();
 
@@ -240,6 +250,7 @@ HitRecord intersectScene(Ray ray) {
 
 // Shadows
 
+// Offsets shadow rays away from the surface to avoid self-intersection acne.
 Ray makeShadowRay(HitRecord record, vec3 directionToLight) {
     vec3 offsetNormal = dot(record.normal, directionToLight) < 0.0
         ? -record.normal : record.normal;
@@ -247,11 +258,13 @@ Ray makeShadowRay(HitRecord record, vec3 directionToLight) {
     return Ray(record.position + offsetNormal * EPSILON * 2.0, directionToLight);
 }
 
+// Directional lights have no finite distance, so any hit blocks the light.
 float directionalLightVisibility(HitRecord record, vec3 directionToLight) {
     HitRecord shadowHit = intersectScene(makeShadowRay(record, directionToLight));
     return shadowHit.hit ? 0.0 : 1.0;
 }
 
+// Spotlights are blocked only by hits between the surface and the light.
 float spotlightVisibility(HitRecord record, vec3 directionToLight, float distanceToLight) {
     HitRecord shadowHit = intersectScene(makeShadowRay(record, directionToLight));
     return shadowHit.hit && shadowHit.distance < distanceToLight ? 0.0 : 1.0;
@@ -262,6 +275,7 @@ float spotlightAttenuation(float distanceToLight) {
     return 1.0 / (safeDistance * safeDistance);
 }
 
+// Smooths the cone edge to avoid a hard spotlight cutoff.
 float spotlightConeVisibility(float coneAngleCosine, float cutoffCosine) {
     float outerCutoff = clamp(cutoffCosine, -1.0, 1.0);
     float innerCutoff = min(outerCutoff + SPOTLIGHT_SOFT_EDGE, 1.0);
@@ -271,6 +285,7 @@ float spotlightConeVisibility(float coneAngleCosine, float cutoffCosine) {
 
 // Lighting
 
+// Computes diffuse and specular Phong terms for a single visible light sample.
 vec3 phongLightContribution(
     HitRecord record,
     vec3 directionToLight,
@@ -290,6 +305,7 @@ vec3 phongLightContribution(
         (record.color * diffuseStrength + specularColor * specularStrength);
 }
 
+// Applies ambient, directional, and spotlight contribution for one surface hit.
 vec3 shadeHit(Ray ray, HitRecord record) {
     vec3 shadedColor = record.color * uAmbientIntensity;
     vec3 directionToCamera = normalize(-ray.direction);
@@ -357,6 +373,7 @@ vec3 shadeHit(Ray ray, HitRecord record) {
     return shadedColor;
 }
 
+// Simple sky gradient used when a ray misses all geometry.
 vec3 backgroundColor(Ray ray) {
     float blendFactor = 0.5 * (normalize(ray.direction).y + 1.0);
     return (1.0 - blendFactor) * vec3(1.0) + blendFactor * vec3(0.5, 0.7, 1.0);
@@ -364,6 +381,7 @@ vec3 backgroundColor(Ray ray) {
 
 // Ray tracing
 
+// Traces a primary ray plus a small fixed number of mirror reflection bounces.
 vec3 raytrace(Ray initialRay) {
     Ray ray = initialRay;
 
@@ -401,6 +419,8 @@ vec3 raytrace(Ray initialRay) {
 
 // Post-processing
 
+// ACES-inspired filmic tone mapper for compressing HDR lighting into display
+// range.
 vec3 acesToneMap(vec3 v) {
     v *= 0.6f;
     const float a = 2.51f;
@@ -411,10 +431,12 @@ vec3 acesToneMap(vec3 v) {
     return clamp((v * (a * v + b)) / (v * (c * v + d) + e), 0.0f, 1.0f);
 }
 
+// Applies display gamma after tone mapping.
 vec3 gammaCorrect(vec3 color) {
     return pow(max(color, vec3(0.0)), vec3(1.0 / uGamma));
 }
 
+// Converts linear HDR shader output into final display color.
 vec3 displayColor(vec3 color) {
     if (uToneMapMode == TONE_MAP_RAW) {
         return clamp(color, 0.0, 1.0);
@@ -425,6 +447,7 @@ vec3 displayColor(vec3 color) {
 
 // Entry point
 
+// Four fixed sub-pixel samples provide inexpensive antialiasing.
 void main() {
     vec3 color = vec3(0.0);
 

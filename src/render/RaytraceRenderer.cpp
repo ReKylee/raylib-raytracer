@@ -16,16 +16,25 @@
 #include <string>
 #include <string_view>
 
+namespace raytracer::render {
+
+using scene::DirectionalLight;
+using scene::MAX_LIGHTS;
+using scene::MAX_PLANES;
+using scene::MAX_SPHERES;
+using scene::Spotlight;
+
 namespace {
 
 std::string BuildShaderDefines() {
   return TextFormat("#define MAX_SPHERES %d\n"
                     "#define MAX_PLANES %d\n"
                     "#define MAX_LIGHTS %d\n",
-                    raytracer::scene::MAX_SPHERES, raytracer::scene::MAX_PLANES,
-                    raytracer::scene::MAX_LIGHTS);
+                    MAX_SPHERES, MAX_PLANES, MAX_LIGHTS);
 }
 
+// GLSL requires #version to remain the first directive, so generated capacity
+// defines are inserted immediately after it when a version line exists.
 std::string InjectShaderDefines(std::string_view shaderSource,
                                 std::string_view defines) {
   constexpr std::string_view versionDirective = "#version";
@@ -66,14 +75,6 @@ Shader LoadFragmentShaderWithDefines(const char *shaderPath) {
 
 } // namespace
 
-namespace raytracer::render {
-
-using scene::DirectionalLight;
-using scene::MAX_LIGHTS;
-using scene::MAX_PLANES;
-using scene::MAX_SPHERES;
-using scene::Spotlight;
-
 namespace {
 
 Matrix CreateCameraToWorld(const scene::CameraData &camera) {
@@ -82,6 +83,8 @@ Matrix CreateCameraToWorld(const scene::CameraData &camera) {
       Vector3Normalize(Vector3CrossProduct(forward, camera.up));
   const Vector3 up = Vector3CrossProduct(right, forward);
 
+  // Columns encode the camera basis expected by the fragment shader. Forward is
+  // negated because camera-space rays look down -Z.
   Matrix cameraToWorld = MatrixIdentity();
   cameraToWorld.m0 = right.x;
   cameraToWorld.m1 = right.y;
@@ -177,6 +180,8 @@ void RaytraceRenderer::uploadScene(const scene::Scene &scene) {
 
   UploadUniforms(m_shader, sceneUniforms);
 
+  // Geometry and material fields are packed into vec4 arrays to keep the shader
+  // interface compact and friendly to raylib uniform uploads.
   const auto sphereData = PackArray<Vector4, MAX_SPHERES>(
       scene.spheres, sphereCount, PackSphereData);
   const auto sphereColor = PackArray<Vector4, MAX_SPHERES>(

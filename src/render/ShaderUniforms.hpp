@@ -12,6 +12,7 @@
 
 namespace raytracer::render {
 
+/// Shader uniform names shared by location lookup and upload code.
 namespace shader_uniforms {
 
 constexpr const char *resolution = "iResolution";
@@ -44,6 +45,7 @@ constexpr const char *spotlightIntensity = "uSpotlightIntensity";
 
 } // namespace shader_uniforms
 
+/// Cached locations for all uniforms consumed by the ray tracing shader.
 struct ShaderLocations {
   int resolution = -1;
   int time = -1;
@@ -74,27 +76,52 @@ struct ShaderLocations {
   int spotlightIntensity = -1;
 };
 
+/// Single-value uniform upload descriptor.
 struct UniformUpload {
+  /// Shader location returned by GetShaderLocation.
   int location = -1;
+
+  /// Pointer to the value passed to raylib.
   const void *value = nullptr;
+
+  /// raylib SHADER_UNIFORM_* type.
   int type = 0;
 };
 
+/// Array uniform upload descriptor.
 struct UniformArrayUpload {
+  /// Shader location returned by GetShaderLocation.
   int location = -1;
+
+  /// Pointer to the first array element passed to raylib.
   const void *values = nullptr;
+
+  /// raylib SHADER_UNIFORM_* element type.
   int type = 0;
+
+  /// Number of elements to upload.
   int count = 0;
 };
 
+/// Finds and stores all shader uniform locations used by the renderer.
 void LoadShaderLocations(Shader shader, ShaderLocations &locations);
 
+/// Packs sphere position and radius into a vec4-compatible value.
 Vector4 PackSphereData(const scene::Sphere &sphere);
+
+/// Packs sphere color and shininess into a vec4-compatible value.
 Vector4 PackSphereColor(const scene::Sphere &sphere);
+
+/// Packs plane normal and offset into a vec4-compatible value.
 Vector4 PackPlaneData(const scene::Plane &plane);
+
+/// Packs plane color and shininess into a vec4-compatible value.
 Vector4 PackPlaneColor(const scene::Plane &plane);
+
+/// Packs spotlight direction and cutoff cosine into a vec4-compatible value.
 Vector4 PackSpotlightDirectionCutoff(const scene::Spotlight &light);
 
+/// Uploads a group of scalar/vector/matrix uniforms.
 inline void UploadUniforms(Shader shader,
                            std::span<const UniformUpload> uploads) {
   std::ranges::for_each(uploads, [shader](const UniformUpload &upload) {
@@ -102,6 +129,7 @@ inline void UploadUniforms(Shader shader,
   });
 }
 
+/// Uploads non-empty uniform arrays.
 inline void UploadUniformArrays(Shader shader,
                                 std::span<const UniformArrayUpload> uploads) {
   auto activeUploads =
@@ -116,11 +144,13 @@ inline void UploadUniformArrays(Shader shader,
       });
 }
 
+/// Returns a range size clamped to the shader-side capacity.
 template <std::size_t MaxCount, std::ranges::sized_range Range>
 std::size_t ClampedCount(const Range &range) {
   return std::min(std::ranges::size(range), MaxCount);
 }
 
+/// Packs the first count source elements into a fixed-size GPU upload array.
 template <typename Packed, std::size_t Capacity,
           std::ranges::random_access_range SourceRange, typename Projection>
 std::array<Packed, Capacity>

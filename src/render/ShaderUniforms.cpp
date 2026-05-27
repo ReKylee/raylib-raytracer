@@ -4,6 +4,7 @@
 #include <array>
 #include <string>
 
+namespace raytracer::render {
 namespace {
 
 int FindShaderLocation(Shader shader, const char *name) {
@@ -14,6 +15,7 @@ int FindShaderArrayLocation(Shader shader, const char *name) {
   int loc = FindShaderLocation(shader, name);
 
   if (loc == -1) {
+    // Some GLSL drivers expose array uniforms only through the first element.
     const std::string firstElementName = std::string{name} + "[0]";
     loc = GetShaderLocation(shader, firstElementName.c_str());
   }
@@ -23,14 +25,14 @@ int FindShaderArrayLocation(Shader shader, const char *name) {
 
 } // namespace
 
-namespace raytracer::render {
-
 void LoadShaderLocations(Shader shader, ShaderLocations &locations) {
   struct UniformLocation {
     int ShaderLocations::*location = nullptr;
     const char *name = nullptr;
   };
 
+  // Keep scalar and array lookups separate because array uniforms may need the
+  // "[0]" fallback above.
   constexpr auto scalarUniforms = std::to_array<UniformLocation>({
       {&ShaderLocations::resolution, shader_uniforms::resolution},
       {&ShaderLocations::time, shader_uniforms::time},

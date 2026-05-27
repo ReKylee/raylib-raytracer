@@ -11,6 +11,7 @@
 #pragma clang diagnostic pop
 #endif
 
+namespace raytracer::app::camera {
 namespace {
 
 constexpr float MOVE_SPEED = 4.0f;
@@ -23,27 +24,29 @@ Vector3 RotateVector(Vector3 vector, Quaternion orientation) {
   return Vector3Normalize(Vector3RotateByQuaternion(vector, orientation));
 }
 
-Vector3 CameraRight(const raytracer::scene::CameraData &camera) {
+Vector3 CameraRight(const scene::CameraData &camera) {
   return Vector3Normalize(Vector3CrossProduct(camera.forward, camera.up));
 }
 
-Quaternion InitialOrientation(const raytracer::scene::CameraData &camera) {
+Quaternion InitialOrientation(const scene::CameraData &camera) {
   return QuaternionFromVector3ToVector3(DEFAULT_FORWARD,
                                         Vector3Normalize(camera.forward));
 }
 
-void ApplyOrientation(raytracer::scene::CameraData &camera,
-                      Quaternion orientation) {
+// Keeps the camera basis derived from one quaternion so mouse rotations do not
+// gradually skew the forward/up vectors.
+void ApplyOrientation(scene::CameraData &camera, Quaternion orientation) {
   camera.forward = RotateVector(DEFAULT_FORWARD, orientation);
   camera.up = RotateVector(DEFAULT_UP, orientation);
 }
 
-void Rotate(raytracer::scene::CameraData &camera, Quaternion &orientation,
+void Rotate(scene::CameraData &camera, Quaternion &orientation,
             Vector2 mouseDelta) {
   if (mouseDelta.x == 0.0f && mouseDelta.y == 0.0f) {
     return;
   }
 
+  // Yaw around the camera up axis, then pitch around the current right axis.
   const Quaternion yaw = QuaternionFromAxisAngle(
       camera.up, -mouseDelta.x * MOUSE_SENSITIVITY * DEG2RAD);
   const Quaternion pitch = QuaternionFromAxisAngle(
@@ -54,10 +57,11 @@ void Rotate(raytracer::scene::CameraData &camera, Quaternion &orientation,
   ApplyOrientation(camera, orientation);
 }
 
-Vector3 MovementDirection(const raytracer::scene::CameraData &camera) {
+Vector3 MovementDirection(const scene::CameraData &camera) {
   const Vector3 right = CameraRight(camera);
   Vector3 direction{};
 
+  // WASD moves on the camera plane; Q/E move vertically along camera up.
   if (IsKeyDown(KEY_W)) {
     direction = Vector3Add(direction, camera.forward);
   }
@@ -86,7 +90,7 @@ float MoveSpeed() {
          GetFrameTime();
 }
 
-void Move(raytracer::scene::CameraData &camera, Vector3 direction) {
+void Move(scene::CameraData &camera, Vector3 direction) {
   if (Vector3LengthSqr(direction) == 0.0f) {
     return;
   }
@@ -108,8 +112,6 @@ void ToggleCursorCapture() {
 }
 
 } // namespace
-
-namespace raytracer::app::camera {
 
 void Initialize(scene::CameraData &camera, Vector4 &orientation) {
   orientation = InitialOrientation(camera);
