@@ -4,6 +4,9 @@
 
 namespace raytracer::app::debug {
 
+/// Default display gamma used by the debug controls.
+constexpr float DEFAULT_GAMMA = 2.2f;
+
 /// Tone mapping modes exposed by the debug overlay.
 enum class ToneMapMode {
   Raw = 0,
@@ -29,7 +32,7 @@ struct State {
   LightMode lightMode = LightMode::All;
 
   /// Display gamma used by the shader post-processing step.
-  float gamma = 2.2f;
+  float gamma = DEFAULT_GAMMA;
 };
 
 /// Updates debug state from keyboard shortcuts.

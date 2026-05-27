@@ -26,6 +26,9 @@ using scene::Spotlight;
 
 namespace {
 
+constexpr int MIN_VIEWPORT_HEIGHT = 1;
+constexpr float HALF_FIELD_OF_VIEW = 0.5f;
+
 std::string BuildShaderDefines() {
   return TextFormat("#define MAX_SPHERES %d\n"
                     "#define MAX_PLANES %d\n"
@@ -106,9 +109,11 @@ Matrix CreateCameraToWorld(const scene::CameraData &camera) {
 }
 
 Vector2 CreateViewportScale(int width, int height, float fovYDegrees) {
-  const float safeHeight = static_cast<float>(height > 0 ? height : 1);
+  const float safeHeight =
+      static_cast<float>(height > 0 ? height : MIN_VIEWPORT_HEIGHT);
   const float aspect = static_cast<float>(width) / safeHeight;
-  const float verticalScale = std::tan(fovYDegrees * DEG2RAD * 0.5f);
+  const float verticalScale =
+      std::tan(fovYDegrees * DEG2RAD * HALF_FIELD_OF_VIEW);
 
   return {aspect * verticalScale, verticalScale};
 }

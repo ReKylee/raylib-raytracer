@@ -12,6 +12,9 @@
 
 namespace raytracer::render {
 
+/// raylib reports missing shader uniforms with this location.
+constexpr int INVALID_SHADER_LOCATION = -1;
+
 /// Shader uniform names shared by location lookup and upload code.
 namespace shader_uniforms {
 
@@ -47,39 +50,39 @@ constexpr const char *spotlightIntensity = "uSpotlightIntensity";
 
 /// Cached locations for all uniforms consumed by the ray tracing shader.
 struct ShaderLocations {
-  int resolution = -1;
-  int time = -1;
-  int toneMapMode = -1;
-  int lightMode = -1;
-  int gamma = -1;
+  int resolution = INVALID_SHADER_LOCATION;
+  int time = INVALID_SHADER_LOCATION;
+  int toneMapMode = INVALID_SHADER_LOCATION;
+  int lightMode = INVALID_SHADER_LOCATION;
+  int gamma = INVALID_SHADER_LOCATION;
 
-  int cameraToWorld = -1;
-  int cameraViewportScale = -1;
+  int cameraToWorld = INVALID_SHADER_LOCATION;
+  int cameraViewportScale = INVALID_SHADER_LOCATION;
 
-  int sphereCount = -1;
-  int sphereData = -1;
-  int sphereColor = -1;
+  int sphereCount = INVALID_SHADER_LOCATION;
+  int sphereData = INVALID_SHADER_LOCATION;
+  int sphereColor = INVALID_SHADER_LOCATION;
 
-  int planeCount = -1;
-  int planeData = -1;
-  int planeColor = -1;
+  int planeCount = INVALID_SHADER_LOCATION;
+  int planeData = INVALID_SHADER_LOCATION;
+  int planeColor = INVALID_SHADER_LOCATION;
 
-  int ambientIntensity = -1;
+  int ambientIntensity = INVALID_SHADER_LOCATION;
 
-  int directionalLightCount = -1;
-  int directionalLightDirection = -1;
-  int directionalLightIntensity = -1;
+  int directionalLightCount = INVALID_SHADER_LOCATION;
+  int directionalLightDirection = INVALID_SHADER_LOCATION;
+  int directionalLightIntensity = INVALID_SHADER_LOCATION;
 
-  int spotlightCount = -1;
-  int spotlightPosition = -1;
-  int spotlightDirectionCutoff = -1;
-  int spotlightIntensity = -1;
+  int spotlightCount = INVALID_SHADER_LOCATION;
+  int spotlightPosition = INVALID_SHADER_LOCATION;
+  int spotlightDirectionCutoff = INVALID_SHADER_LOCATION;
+  int spotlightIntensity = INVALID_SHADER_LOCATION;
 };
 
 /// Single-value uniform upload descriptor.
 struct UniformUpload {
   /// Shader location returned by GetShaderLocation.
-  int location = -1;
+  int location = INVALID_SHADER_LOCATION;
 
   /// Pointer to the value passed to raylib.
   const void *value = nullptr;
@@ -91,7 +94,7 @@ struct UniformUpload {
 /// Array uniform upload descriptor.
 struct UniformArrayUpload {
   /// Shader location returned by GetShaderLocation.
-  int location = -1;
+  int location = INVALID_SHADER_LOCATION;
 
   /// Pointer to the first array element passed to raylib.
   const void *values = nullptr;

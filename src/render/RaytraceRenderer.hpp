@@ -7,16 +7,25 @@
 
 namespace raytracer::render {
 
+/// Default tone mapper selector used before debug controls change it.
+constexpr int DEFAULT_TONE_MAP_MODE = 1;
+
+/// Default light filter selector used before debug controls change it.
+constexpr int DEFAULT_LIGHT_MODE = 0;
+
+/// Default display gamma used by renderer debug options.
+constexpr float DEFAULT_RENDER_GAMMA = 1.0f;
+
 /// Per-frame shader controls used for visual debugging and presentation.
 struct RenderDebugOptions {
   /// Tone mapper selector. Matches the TONE_MAP_* constants in the shader.
-  int toneMapMode = 1;
+  int toneMapMode = DEFAULT_TONE_MAP_MODE;
 
   /// Light filter selector. Matches the LIGHT_MODE_* constants in the shader.
-  int lightMode = 0;
+  int lightMode = DEFAULT_LIGHT_MODE;
 
   /// Gamma value used during final color correction.
-  float gamma = 1.0;
+  float gamma = DEFAULT_RENDER_GAMMA;
 };
 
 /// Uploads scene data to a ray tracing fragment shader and renders it full-screen.

@@ -14,7 +14,7 @@ int FindShaderLocation(Shader shader, const char *name) {
 int FindShaderArrayLocation(Shader shader, const char *name) {
   int loc = FindShaderLocation(shader, name);
 
-  if (loc == -1) {
+  if (loc == INVALID_SHADER_LOCATION) {
     // Some GLSL drivers expose array uniforms only through the first element.
     const std::string firstElementName = std::string{name} + "[0]";
     loc = GetShaderLocation(shader, firstElementName.c_str());

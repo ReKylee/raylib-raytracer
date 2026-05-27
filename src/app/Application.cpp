@@ -12,13 +12,19 @@ using scene::Scene;
 using scene::Sphere;
 using scene::Spotlight;
 
+namespace {
+
+constexpr int TARGET_FPS = 60;
+
+} // namespace
+
 Application::Application(int width, int height, std::string title)
     : m_width(width), m_height(height), m_title(std::move(title)) {
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
   InitWindow(m_width, m_height, m_title.c_str());
   SetExitKey(KEY_F10);
-  SetTargetFPS(60);
+  SetTargetFPS(TARGET_FPS);
 
   m_renderer.emplace("assets/shaders/raytrace.fs");
   createTestScene();
@@ -214,7 +220,6 @@ void Application::render() {
 
   m_renderer->render(m_width, m_height);
 
-  DrawFPS(10, 10);
   debug::DrawOverlay(m_debugState);
 
   EndDrawing();
