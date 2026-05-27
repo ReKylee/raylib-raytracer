@@ -94,7 +94,14 @@ add_custom_target(${PROJECT_NAME}_assets ALL
     COMMENT "Copying assets to runtime directory"
 )
 
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_assets)
+add_custom_target(${PROJECT_NAME}_scenes ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/Scenes"
+        "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Scenes"
+    COMMENT "Copying scenes to runtime directory"
+)
+
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_assets ${PROJECT_NAME}_scenes)
 
 # Web / Emscripten config
 if (PLATFORM STREQUAL "Web")

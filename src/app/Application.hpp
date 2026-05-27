@@ -4,8 +4,10 @@
 #include "render/RaytraceRenderer.hpp"
 #include "scene/scene.hpp"
 
+#include <cstddef>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace raytracer::app {
 
@@ -20,7 +22,9 @@ public:
   void run();
 
 private:
-  void createTestScene();
+  void scanScenes();
+  void loadScene(std::size_t index);
+  void drawLoadError() const;
 
   void update();
   void render();
@@ -34,6 +38,11 @@ private:
   scene::Scene m_scene{};
   Vector4 m_cameraOrientation{};
   debug::State m_debugState{};
+
+  std::vector<std::string> m_scenePaths;
+  std::size_t m_currentScene = 0;
+  // Non-empty when the last loadScene attempt failed; rendered as a banner.
+  std::string m_loadError;
 };
 
 } // namespace raytracer::app

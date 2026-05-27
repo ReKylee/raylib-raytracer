@@ -1,16 +1,13 @@
 #include "app/Application.hpp"
 #include "app/CameraControls.hpp"
+#include "sceneParser/SceneParser.hpp"
 
-#include <cmath>
+#include <algorithm>
+#include <filesystem>
+#include <stdexcept>
 #include <utility>
 
 namespace raytracer::app {
-
-using scene::DirectionalLight;
-using scene::Plane;
-using scene::Scene;
-using scene::Sphere;
-using scene::Spotlight;
 
 Application::Application(int width, int height, std::string title)
     : m_width(width), m_height(height), m_title(std::move(title)) {
@@ -21,11 +18,11 @@ Application::Application(int width, int height, std::string title)
   SetTargetFPS(60);
 
   m_renderer.emplace("assets/shaders/raytrace.fs");
-  createTestScene();
-  DisableCursor();
 
-  // Static scene data only needs to be uploaded once, unless the scene changes.
-  m_renderer->uploadScene(m_scene);
+  scanScenes();
+  loadScene(0);
+
+  DisableCursor();
 }
 
 Application::~Application() {
@@ -40,167 +37,83 @@ void Application::run() {
   }
 }
 
-void Application::createTestScene() {
-  m_scene = Scene{
-      .camera =
-          {
-              .position = {0.0f, 0.75f, 8.4f},
-              .forward = {0.0f, -0.1f, -1.0f},
-              .up = {0.0f, 1.0f, 0.0f},
-              .fovY = 50.0f,
-          },
+void Application::scanScenes() {
+  namespace fs = std::filesystem;
 
-      .ambient = {.intensity = {0.035f, 0.04f, 0.055f}},
+  const fs::path scenesDir{"Scenes"};
+  if (!fs::is_directory(scenesDir)) {
+    throw std::runtime_error("Application: 'Scenes' directory not found");
+  }
 
-      .spheres =
-          {
-              // Center: glossy reflections, strong highlights, and
-              // self-shadowing.
-              Sphere{
-                  .position = {0.0f, 0.0f, 0.0f},
-                  .radius = 1.0f,
-                  .color = {1.0f, 0.1f, 0.07f},
-                  .shininess = 96.0f,
-              },
+  m_scenePaths.clear();
+  for (const auto &entry : fs::directory_iterator{scenesDir}) {
+    if (entry.is_regular_file() && entry.path().extension() == ".txt") {
+      m_scenePaths.push_back(entry.path().string());
+    }
+  }
 
-              // Left bay: hard directional shadows and saturated diffuse color.
-              Sphere{
-                  .position = {-3.2f, -0.35f, -0.55f},
-                  .radius = 0.65f,
-                  .color = {0.05f, 0.52f, 1.0f},
-                  .shininess = 72.0f,
-              },
+  std::sort(m_scenePaths.begin(), m_scenePaths.end());
 
-              // Right bay: warm spotlight and clear ground shadow.
-              Sphere{
-                  .position = {3.25f, -0.28f, -0.75f},
-                  .radius = 0.72f,
-                  .color = {0.18f, 1.0f, 0.28f},
-                  .shininess = 28.0f,
-              },
+  if (m_scenePaths.empty()) {
+    throw std::runtime_error("Application: no .txt scene files in Scenes/");
+  }
+}
 
-              // Foreground: tiny geometry for antialiasing and depth ordering.
-              Sphere{
-                  .position = {-0.55f, -0.73f, 2.25f},
-                  .radius = 0.28f,
-                  .color = {1.0f, 0.86f, 0.05f},
-                  .shininess = 16.0f,
-              },
+void Application::loadScene(std::size_t index) {
+  m_currentScene = index % m_scenePaths.size();
+  try {
+    m_scene = sceneParser::parseScene(m_scenePaths[m_currentScene]);
+    m_renderer->uploadScene(m_scene);
+    camera::Initialize(m_scene.camera, m_cameraOrientation);
+    m_loadError.clear();
+  } catch (const std::exception &e) {
+    // Keep the previously-loaded scene rendering; show the error in the UI.
+    m_loadError = e.what();
+  }
+}
 
-              // Back center: visible in reflections and second directional
-              // light.
-              Sphere{
-                  .position = {0.9f, 0.68f, -2.35f},
-                  .radius = 0.42f,
-                  .color = {0.78f, 0.22f, 1.0f},
-                  .shininess = 160.0f,
-              },
+void Application::drawLoadError() const {
+  if (m_loadError.empty()) {
+    return;
+  }
 
-              // Left rear: bright specular reference.
-              Sphere{
-                  .position = {-2.25f, -0.72f, -2.15f},
-                  .radius = 0.3f,
-                  .color = {0.95f, 0.95f, 0.9f},
-                  .shininess = 220.0f,
-              },
+  namespace fs = std::filesystem;
+  const std::string fileName =
+      fs::path(m_scenePaths[m_currentScene]).filename().string();
+  const std::string title = "Failed to load: " + fileName;
 
-              // Right foreground: overlap and reflection test.
-              Sphere{
-                  .position = {1.85f, -0.62f, 1.45f},
-                  .radius = 0.38f,
-                  .color = {1.0f, 0.38f, 0.88f},
-                  .shininess = 120.0f,
-              },
+  constexpr int fontSize = 18;
+  constexpr int lineHeight = fontSize + 8;
+  constexpr int padding = 14;
+  constexpr int margin = 14;
 
-              // Far wall marker: makes spotlight cone edges easier to see.
-              Sphere{
-                  .position = {-3.65f, 0.18f, -3.25f},
-                  .radius = 0.55f,
-                  .color = {0.12f, 1.0f, 0.82f},
-                  .shininess = 48.0f,
-              },
+  const int textWidth = std::max(MeasureText(title.c_str(), fontSize),
+                                 MeasureText(m_loadError.c_str(), fontSize));
+  const int bannerWidth =
+      std::min(textWidth + padding * 2, GetScreenWidth() - margin * 2);
+  const int bannerHeight = padding * 2 + lineHeight * 2;
+  const int bannerX = margin;
+  const int bannerY = GetScreenHeight() - margin - bannerHeight;
 
-              // Directional test: neutral caster for warm left-to-right
-              // shadows.
-              Sphere{
-                  .position = {-4.1f, -0.55f, 1.25f},
-                  .radius = 0.45f,
-                  .color = {0.86f, 0.86f, 0.82f},
-                  .shininess = 36.0f,
-              },
-
-              // Directional test: neutral caster for cool right-to-left
-              // shadows.
-              Sphere{
-                  .position = {4.15f, -0.55f, 0.95f},
-                  .radius = 0.45f,
-                  .color = {0.82f, 0.86f, 0.9f},
-                  .shininess = 36.0f,
-              },
-          },
-
-      .planes =
-          {
-              // Floor: non-unit normal tests plane normalization and checker
-              // UVs.
-              Plane{
-                  .normal = {0.0f, 2.0f, 0.0f},
-                  .offset = 2.0f,
-                  .color = {0.8f, 0.8f, 0.74f},
-                  .shininess = 12.0f,
-              },
-
-              // Back wall catches both spotlight cones and reflected objects.
-              Plane{
-                  .normal = {0.0f, 0.0f, 1.0f},
-                  .offset = 4.2f,
-                  .color = {0.55f, 0.6f, 0.7f},
-                  .shininess = 18.0f,
-              },
-          },
-
-      .directionalLights =
-          {
-              // Warm key direction: hard colored shadows from the left/front.
-              DirectionalLight{
-                  .direction = {0.62f, -0.72f, -0.38f},
-                  .intensity = {0.85f, 0.52f, 0.28f},
-              },
-
-              // Cool key direction: second directional light from the
-              // right/front.
-              DirectionalLight{
-                  .direction = {-0.58f, -0.58f, -0.58f},
-                  .intensity = {0.28f, 0.42f, 0.78f},
-              },
-          },
-
-      .spotlights =
-          {
-              // Cool narrow cone: visible soft edge on the left floor/wall.
-              Spotlight{
-                  .position = {-3.8f, 2.7f, 2.5f},
-                  .direction = {0.25f, -0.68f, -0.7f},
-                  .intensity = {3.8f, 5.2f, 8.0f},
-                  .cosineCutoff = static_cast<float>(std::cos(15.0f * DEG2RAD)),
-              },
-
-              // Warm wider cone: overlaps the center and right bay.
-              Spotlight{
-                  .position = {3.8f, 2.35f, 2.1f},
-                  .direction = {-0.62f, -0.55f, -0.56f},
-                  .intensity = {5.6f, 2.4f, 0.75f},
-                  .cosineCutoff = static_cast<float>(std::cos(24.0f * DEG2RAD)),
-              },
-          },
-  };
-
-  camera::Initialize(m_scene.camera, m_cameraOrientation);
+  DrawRectangle(bannerX, bannerY, bannerWidth, bannerHeight,
+                Color{60, 12, 12, 235});
+  DrawRectangleLines(bannerX, bannerY, bannerWidth, bannerHeight,
+                     Color{220, 80, 80, 230});
+  DrawText(title.c_str(), bannerX + padding, bannerY + padding, fontSize,
+           Color{255, 200, 200, 255});
+  DrawText(m_loadError.c_str(), bannerX + padding,
+           bannerY + padding + lineHeight, fontSize,
+           Color{255, 235, 235, 255});
 }
 
 void Application::update() {
   m_width = GetScreenWidth();
   m_height = GetScreenHeight();
+
+  // Space cycles to the next scene; loadScene wraps around the list.
+  if (IsKeyPressed(KEY_SPACE)) {
+    loadScene(m_currentScene + 1);
+  }
 
   debug::Update(m_debugState);
   camera::UpdateFreeCamera(m_scene.camera, m_cameraOrientation);
@@ -216,6 +129,7 @@ void Application::render() {
 
   DrawFPS(10, 10);
   debug::DrawOverlay(m_debugState);
+  drawLoadError();
 
   EndDrawing();
 }
