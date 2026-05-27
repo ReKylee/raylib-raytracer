@@ -23,8 +23,10 @@ course.
 - Infinite checkerboard texturing on planes
 - Phong lighting (ambient, diffuse, specular) with per-material shininess
 - Global ambient, directional, and spotlight lights
+- Spotlights with distance attenuation and smooth cone falloff
 - Hard shadows from every light source
 - Per-material reflections with a bounded bounce depth
+- Four-sample anti-aliasing for smoother edges
 - ACES tone mapping with adjustable gamma
 - Free-fly debug camera
 - Automatic scene discovery from `Scenes/`
@@ -124,4 +126,5 @@ The `Scenes/` folder ships with:
   reference PNG
 - `scene_*.txt`: extra valid test scenes, including minimal scenes, empty object
   or light lists, spotlight-only lighting, and mixed whitespace
-- `z_bad_*.txt`: intentionally invalid scenes used to test parser errors
+- `z_test_invalid_*.txt`: intentionally invalid scenes used to test parser
+  errors

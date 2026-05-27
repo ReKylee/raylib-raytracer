@@ -8,3 +8,4 @@ out/
 CMakeSettings.json
 .cache
 desktop.ini
+compile_commands.json
